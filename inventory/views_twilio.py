@@ -57,7 +57,7 @@ def handle_onboarding(phone, msg, resp):
             f"   • 'edit <id>' → edit property details\n"
             f"   • 'profile' → view your broker profile\n"
             f"   • 'editprofile' → edit your broker profile\n"
-            f"   • 'help' → commands guide incase you stuck somewhere\n"
+            f"   • 'help' → guide incase you stuck somewhere\n"
         )
         return resp
     
@@ -323,7 +323,7 @@ def handle_done(broker, resp):
 
     clear_session(broker.id)
     resp.message(
-        f" New property added as Draft.\n\n"
+        f" New property added.\n\n"
         f"[{prop.property_id}] {prop.title} \n"
         f" {prop.bhk or ''} BHK in {prop.city or ''} for {prop.sale_or_rent}\n"
         f" {prop.area_sqft or 'N/A'} sqrt\n"
@@ -333,7 +333,8 @@ def handle_done(broker, resp):
         f" Status: {prop.status.title()}\n\n"
         f"👉 Reply 'list' to see all your properties\n"
         f"👉 Reply 'edit {prop.property_id}' to edit this property\n"
-        f"👉 Reply 'delete {prop.property_id}' to remove the property"
+        f"👉 Reply 'delete {prop.property_id}' to remove the property\n"
+        f"👉 Reply 'help' for command guide"
     )
     return resp
 
@@ -385,9 +386,10 @@ def handle_view(broker, msg, resp):
     resp.message(details_msg)
 
     media_assets = MediaAsset.objects.filter(property=prop)
-    for media in media_assets:
+    if media_assets.exists():
         msg_with_media = resp.message("📸 Property Media")
-        msg_with_media.media(media.storage_url)
+        for media in media_assets:
+            msg_with_media.media(media.storage_url)
 
     return resp
 
