@@ -39,3 +39,4 @@ dj-database-url
 cloudinary
 django-cloudinary-storage
 twilio
+redis
