@@ -2,12 +2,9 @@ import redis
 import json
 import os
 
-redis_client = redis.Redis(
-    host = os.getenv("REDIS_PORT", "localhost"),
-    port = int(os.getenv("REDIS_PORT", 6380)),
-    db = 0,
-    decode_responses = True
-)
+REDIS_URL = os.getenv("REDIS_URL")
+
+redis_client = redis.from_url(REDIS_URL, decode_responses=True, ssl=True)
 
 
 def set_session(broker_id, data, ttl = 600):
