@@ -16,6 +16,129 @@ load_dotenv()
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 
+def handle_onboarding(phone, msg, resp):
+    session = get_session(phone)
+
+    if not session:
+        set_session(phone, {"mode": "onboarding", "step": "ask_name"})
+        resp.message("Welcome to KeyMate!\n Let's get you onboarded.\n\nPlease tell me your *full name*.")
+        return resp
+    
+    step = session.get("step")
+
+    if step == "ask_name":
+        session["name"] = msg.strip()
+        session["step"] = "ask_mail"
+        set_session(phone, session)
+        resp.message(f"Thanks {msg}! \nNow tell me your e-mail (or type 'skip' if none).")
+        return resp
+    
+    elif step == "ask_mail":
+        mail = None if msg.lower() == 'skip' else msg.strip()
+
+        broker = Broker.objects.create(
+            name = session["name"],
+            phone_number = phone,
+            email = mail
+        )
+
+        clear_session(phone)
+
+        resp.message(
+            f"✅ You’re registered, {broker.name}!\n\n"
+            f"Here’s how to use KeyMate:\n"
+            f"1️⃣ Send me a property description → I’ll extract details.\n"
+            f"2️⃣ Upload images/videos → type 'done' when finished.\n"
+            f"3️⃣ I’ll create a draft property for you.\n"
+            f"4️⃣ Use commands:\n"
+            f"   • 'list' → see all your properties\n"
+            f"   • 'disable <id>' → hide the property from user\n"
+            f"   • 'delete <id>' → delete the property\n"
+            f"   • 'edit <id>' → edit property details\n"
+            f"   • 'profile' → view your broker profile\n"
+            f"   • 'editprofile' → edit your broker profile\n"
+            f"   • 'help' → commands guide incase you stuck somewhere\n"
+        )
+        return resp
+    
+    return resp
+
+def handle_profile(broker, msg, resp):
+    lines = [f"👤 *Your Profile*",
+             f"Name: {broker.name or 'N/A'}",
+             f"Phone: {broker.phone_number}",
+             f"Email: {broker.email or 'N/A'}",
+             f"Joined: {broker.created_at.strftime('%Y-%m-%d') if broker.created_at else 'N/A'}"]
+
+    resp.message("\n".join(lines) + "\n\n👉 Reply 'editprofile' to update your details.")
+    return resp
+
+def handle_editprofile(broker, msg, resp):
+    session = {
+        "mode": "edit_broker",
+        "step": "choose_field",
+    }
+    set_session(broker.id, session)
+
+    resp.message(
+        f"✏️ Editing Profile\n\n"
+        f"What do you want to edit?\n"
+        f"1️⃣ Name\n"
+        f"2️⃣ Email\n\n"
+        f"👉 Reply with the number"
+    )
+    return resp
+
+
+def handle_edit_broker_session(broker, msg, resp, session):
+    step = session.get("step")
+
+    if step == "choose_field":
+        field_map = {"1": "name", "2": "email"}
+        if msg not in field_map:
+            resp.message("⚠️ Invalid choice. Reply with 1 or 2.")
+            return resp
+
+        session["step"] = "awaiting_value"
+        session["field"] = field_map[msg]
+        set_session(broker.id, session)
+        resp.message(f"✏️ Send me the new {session['field']}.")
+        return resp
+
+    elif step == "awaiting_value":
+        field = session.get("field")
+        new_value = msg.strip()
+
+        setattr(broker, field, new_value)
+        broker.save()
+
+        clear_session(broker.id)
+        resp.message(f"✅ Updated {field} to: {new_value}")
+        return resp
+    
+
+def handle_help(broker, msg, resp):
+    resp.message(
+        "*KeyMate Bot Help*\n\n"
+        "Here are the commands you can use:\n\n"
+        "🏡 Property Management:\n"
+        "- Send property description → Add new property\n"
+        "- Upload images/videos → Attach media\n"
+        "- done / skip → Finish adding property\n"
+        "- list → View all your properties\n"
+        "- view <property_id> → View property details\n"
+        "- edit <property_id> → Edit property\n"
+        "- delete <property_id> → Delete property\n"
+        "- activate <property_id> → Activate property\n"
+        "- disable <property_id> → Disable property\n\n"
+        "👤 Profile Management:\n"
+        "- profile → View your broker profile\n"
+        "- editprofile → Edit your profile details\n\n"
+        "❓ Help:\n"
+        "- help → For your help guide"
+    )
+    return resp
+
 def handle_activate(broker, msg, resp):
     property_number = msg.split()[-1]
     try:
@@ -78,20 +201,6 @@ def handle_list(broker, msg, resp):
         
     return resp
 
-def handle_yes(broker, msg, resp):
-    session = get_session(broker.id)
-    if not session or "pending_property" not in session:
-        resp.message("No Property pending confirmation")
-    
-    prop = session["pending_property"]
-    clear_session(broker.id)
-    resp.message(f"Saved property draft: {prop['title']} ({prop['city']})")
-    return resp
-
-def handle_no(broker, msg, resp):
-    clear_session(broker.id)
-    resp.message("Property Discarded")
-    return resp
 
 
 EDIT_FIELDS_MAP = {
@@ -207,11 +316,12 @@ def handle_done(broker, resp):
     media = session["media"]
 
     prop = extract(broker, description=description, media_urls=[m["url"] for m in media])
+    prop.status = "active"
+    prop.save()
     for m in media:
         MediaAsset.objects.create(property=prop, media_type=m["type"], storage_url=m["url"], order=m["order"])
 
-    set_session(broker.id, {"mode": "confirm", "pending_property_id": prop.property_id})
-
+    clear_session(broker.id)
     resp.message(
         f" New property added as Draft.\n\n"
         f"[{prop.property_id}] {prop.title} \n"
@@ -221,8 +331,9 @@ def handle_done(broker, resp):
         f" {prop.price or 'N/A'} {prop.currency}\n"
         f" near {prop.locality}\n"
         f" Status: {prop.status.title()}\n\n"
-        f"👉 Reply 'Activate {prop.property_id}' to publish\n"
-        f"👉 Reply 'Disable {prop.property_id}' to hide later"
+        f"👉 Reply 'list' to see all your properties\n"
+        f"👉 Reply 'edit {prop.property_id}' to edit this property\n"
+        f"👉 Reply 'delete {prop.property_id}' to remove the property"
     )
     return resp
 
@@ -297,8 +408,8 @@ def whatsaap_webhook(request):
         try:
             broker = Broker.objects.get(phone_number=phone)
         except Broker.DoesNotExist:
-            resp.message("Sorry, Your number is not registered as broker.")
-            return HttpResponse(str(resp), content_type = "application/xml")
+            resp = handle_onboarding(phone, msg, resp)
+            return HttpResponse(str(resp), content_type="application/xml")
 
 
         session = get_session(broker.id)
@@ -361,17 +472,21 @@ def whatsaap_webhook(request):
                     resp = handle_media(broker, data, resp)
                     return HttpResponse(str(resp), content_type="application/xml")
 
+            elif session.get("mode") == "edit_broker": 
+                resp = handle_edit_broker_session(broker, msg, resp, session)
+                return HttpResponse(str(resp), content_type="application/xml")
 
 
         COMMANDS = {
-            "activate": handle_activate,
             "disable": handle_disable,
             "delete": handle_delete,
             "list": handle_list,
-            "yes": handle_yes,
-            "no": handle_no,
             "edit": handle_edit,
-            "view": handle_view
+            "view": handle_view,
+            "help": handle_help,
+            "profile": handle_profile,
+            "editprofile": handle_editprofile,
+
         }
 
         for cmd, handler in COMMANDS.items():
