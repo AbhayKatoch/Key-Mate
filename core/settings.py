@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'inventory',
     'cloudinary',
-    'django-cloudinary-storage',
+    'cloudinary_storage',
 ]
 
 
