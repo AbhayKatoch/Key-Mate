@@ -38,3 +38,4 @@ django-cors-headers
 dj-database-url
 cloudinary
 django-cloudinary-storage
+twilio
