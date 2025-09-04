@@ -4,7 +4,7 @@ import os
 
 REDIS_URL = os.getenv("REDIS_URL")
 
-redis_client = redis.from_url(REDIS_URL, decode_responses=True, ssl=True)
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 
 def set_session(broker_id, data, ttl = 600):
