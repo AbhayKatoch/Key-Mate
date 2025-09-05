@@ -279,7 +279,13 @@ def fetch_and_store_media(media_url, broker_id, index, ext="jpg"):
         overwrite=True
     )
 
-    return upload_result["secure_url"]
+    url = upload_result["secure_url"]
+
+    if resource_type == "video":
+        url = url.replace("/upload/", "/upload/f_mp4/")
+
+    return url
+
 
     
 
@@ -393,7 +399,12 @@ def handle_view(broker, msg, resp):
     if media_assets.exists():
         msg_with_media = resp.message("📸 Property Media")
         for media in media_assets:
-            msg_with_media.media(media.storage_url)
+            if media.media_type == "image":
+                msg_with_media = resp.message("📸 Property Image")
+                msg_with_media.media(media.storage_url)
+            elif media.media_type == "video":
+                msg_with_media = resp.message("🎥 Property Video")
+                msg_with_media.media(media.storage_url)
 
     return resp
 
@@ -416,11 +427,17 @@ def handle_share(broker, msg, resp):
     
     generated_text = generate_property_message(prop, broker)
 
-    media_assests = MediaAsset.objects.filter(property=prop)
+    media_assets = MediaAsset.objects.filter(property=prop)
 
-    msg_wih_media = resp.message(generated_text)
-    for media in media_assests:
-        msg_wih_media.media(media.storage_url)
+    msg_with_media = resp.message(generated_text)
+    for media in media_assets:
+        if media.media_type == "image":
+            msg_with_media = resp.message("📸 Property Image")
+            msg_with_media.media(media.storage_url)
+        elif media.media_type == "video":
+            msg_with_media = resp.message("🎥 Property Video")
+            msg_with_media.media(media.storage_url)
+
 
     return resp
 
@@ -488,9 +505,12 @@ def whatsaap_webhook(request):
                             return HttpResponse(str(resp), content_type="application/xml")
                         
                     elif field == "status":
-                        if new_value not in ["active", "disable"]:
+                        if new_value not in ["active", "disabled", "disable"]:
                             resp.message("⚠️ Invalid status. Use 'active' or 'disable'.")
                             return HttpResponse(str(resp), content_type="application/xml")
+
+                        if new_value == "disable":
+                            new_value = "disabled"
 
                     setattr(prop, field, new_value)
                     prop.save()
