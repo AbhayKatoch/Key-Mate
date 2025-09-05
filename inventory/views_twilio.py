@@ -211,7 +211,7 @@ EDIT_FIELDS_MAP = {
     "2": "city",
     "3": "bhk",
     "4": "furnishing",
-    "5": "description_raw",
+    "5": "status",
 }
 
 def handle_edit(broker, msg, resp):
@@ -241,7 +241,7 @@ def handle_edit(broker, msg, resp):
         f"2️⃣ City\n"
         f"3️⃣ BHK\n"
         f"4️⃣ Furnishing\n"
-        f"5️⃣ Description\n\n"
+        f"5️⃣ Status\n\n"
         f"👉 Reply with the number"
     )
     return resp
@@ -478,7 +478,7 @@ def whatsaap_webhook(request):
                 
                 elif step == "awaiting_value":
                     field = session.get("field")
-                    new_value = msg
+                    new_value = msg.strip().lower()
 
                     if field in ["price", "bhk"]:
                         try: 
@@ -487,6 +487,11 @@ def whatsaap_webhook(request):
                             resp.message("⚠️ Please enter a valid number.")
                             return HttpResponse(str(resp), content_type="application/xml")
                         
+                    elif field == "status":
+                        if new_value not in ["active", "disable"]:
+                            resp.message("⚠️ Invalid status. Use 'active' or 'disable'.")
+                            return HttpResponse(str(resp), content_type="application/xml")
+
                     setattr(prop, field, new_value)
                     prop.save()
 
