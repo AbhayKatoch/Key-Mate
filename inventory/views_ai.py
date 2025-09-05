@@ -7,6 +7,8 @@ from inventory.services.redis_setup import get_session, set_session, clear_sessi
 from inventory.services.sharing_msg import generate_property_message
 from langchain.agents import initialize_agent, Tool
 from langchain_groq import ChatGroq
+from inventory.services.redis_setup import set_session, get_session, clear_session
+
 
 def list_properties(broker_id, filters = None):
     qs = Property.objects.filter(broker_id = broker_id)
@@ -110,8 +112,17 @@ def whatsaap_webhook(request):
             resp.message("👋 Welcome to KeyMate! Please register first. Send your *full name* to start.")
             return HttpResponse(str(resp), content_type="application/xml")
 
+        session = get_session(broker.id) or {}
+        history = session.get("chat_history", [])
+
+
         try:
-            answer = agent.invoke({"input": msg, "broker_id": broker.id})
+            answer = agent.invoke({"input": msg, "broker_id": broker.id, "chat_history": history})
+
+            history.append(("user", msg))
+            history.append(("assistant", answer))
+            session["chat_history"] = history
+            set_session(broker.id, session)
             resp.message(answer)
         except Exception as e:
             resp.message("⚠️ Sorry, something went wrong. Please try again.")
