@@ -56,6 +56,7 @@ def handle_onboarding(phone, msg, resp):
             f"   • 'disable <id>' → hide the property from user\n"
             f"   • 'delete <id>' → delete the property\n"
             f"   • 'edit <id>' → edit property details\n"
+            f"   • 'share <id>' → sharing message\n"
             f"   • 'profile' → view your broker profile\n"
             f"   • 'editprofile' → edit your broker profile\n"
             f"   • 'help' → guide incase you stuck somewhere\n"
@@ -129,6 +130,7 @@ def handle_help(broker, msg, resp):
         "- list → View all your properties\n"
         "- view <property_id> → View property details\n"
         "- edit <property_id> → Edit property\n"
+        "- share <property_id> → Share property\n"
         "- delete <property_id> → Delete property\n"
         "- activate <property_id> → Activate property\n"
         "- disable <property_id> → Disable property\n\n"
@@ -334,6 +336,7 @@ def handle_done(broker, resp):
         f" Status: {prop.status.title()}\n\n"
         f"👉 Reply 'list' to see all your properties\n"
         f"👉 Reply 'edit {prop.property_id}' to edit this property\n"
+        f"👉 Reply 'share {prop.property_id}' to share the property\n"
         f"👉 Reply 'delete {prop.property_id}' to remove the property\n"
         f"👉 Reply 'help' for command guide"
     )
