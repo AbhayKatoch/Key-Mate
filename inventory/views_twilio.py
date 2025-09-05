@@ -411,7 +411,7 @@ def handle_share(broker, msg, resp):
         resp.message("❌ Property Not Found.")
         return resp
     
-    generated_text = generate_property_message(prop)
+    generated_text = generate_property_message(prop, broker)
 
     media_assests = MediaAsset.objects.filter(property=prop)
 
