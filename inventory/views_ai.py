@@ -117,12 +117,12 @@ def whatsaap_webhook(request):
 
 
         try:
-            answer = agent.invoke({"input": msg, "broker_id": broker.id, "chat_history": history})
+            answer = agent.invoke({"input": msg, "broker_id": str(broker.id), "chat_history": history})
 
             history.append(("user", msg))
             history.append(("assistant", answer))
             session["chat_history"] = history
-            set_session(broker.id, session)
+            set_session(str(broker.id), session)
             resp.message(answer)
         except Exception as e:
             resp.message("⚠️ Sorry, something went wrong. Please try again.")
