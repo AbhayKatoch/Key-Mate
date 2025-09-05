@@ -51,14 +51,13 @@ def generate_property_message(prop, broker):
     - DO NOT add any intro like "here's a message".
     - Make it ready-to-forward as-is.
     - Use engaging language and a few relevant emojis.
-    - Highlight the property features compactly.
-    - Keep it easy to scan (short lines, some spacing).
-    - End with broker’s contact details clearly.
+    - Highlight the property features.
+    - End with broker’s contact details clearly by using let's connect or something before putiing the details.
 
     Property Details:
     {details_text}
 
-    At the end, add a closing signature like, let's connect or something cool:
+    At the end, add a closing signature like:
     
     Contact Broker:
     {broker.name} ({broker.phone_number})"""
