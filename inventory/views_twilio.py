@@ -11,6 +11,7 @@ from django.core.files.storage import default_storage
 import os
 import requests
 import cloudinary.uploader
+from .services.sharing_msg import generate_property_message
 
 load_dotenv()
 TWILIO_SID = os.getenv("TWILIO_SID")
@@ -394,6 +395,33 @@ def handle_view(broker, msg, resp):
     return resp
 
 
+
+#whatsapp sharing
+def handle_share(broker, msg, resp):
+    parts = msg.split()
+    if len(parts) <2 :
+        resp.message("⚠️ Please provide a property ID. Example: share 123")
+        return resp
+    
+    property_number = parts[1]
+
+    try:
+        prop = Property.objects.get(broker= broker, property_id = property_number)
+    except Property.DoesNotExist:
+        resp.message("❌ Property Not Found.")
+        return resp
+    
+    generated_text = generate_property_message(prop)
+
+    media_assests = MediaAsset.objects.filter(property=prop)
+
+    msg_wih_media = resp.message(generated_text)
+    for media in media_assests:
+        msg_wih_media.media(media.storage_url)
+
+    return resp
+
+
 @csrf_exempt
 def whatsaap_webhook(request):
 
@@ -488,6 +516,7 @@ def whatsaap_webhook(request):
             "help": handle_help,
             "profile": handle_profile,
             "editprofile": handle_editprofile,
+            "share": handle_share
 
         }
 
