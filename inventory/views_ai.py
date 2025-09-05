@@ -44,6 +44,33 @@ def view_property(broker_id, property_id):
     ]
     return "\n".join(details)
 
+def safe_list_properties(broker_id: str, filters: dict = None) -> str:
+    """List broker's properties with optional filters (city, bhk, status)."""
+    try:
+        broker = Broker.objects.get(id=broker_id)
+        qs = Property.objects.filter(broker=broker)
+
+        # Apply filters
+        if filters:
+            if "city" in filters:
+                qs = qs.filter(city__icontains=filters["city"])
+            if "bhk" in filters:
+                qs = qs.filter(bhk=filters["bhk"])
+            if "status" in filters:
+                qs = qs.filter(status__iexact=filters["status"])
+
+        qs = qs.order_by("-created_at")[:10]
+
+        if not qs:
+            return "No properties found for your request."
+
+        return "\n".join(
+            [f"[{p.property_id}] {p.title or ''} | {p.city or ''} | {p.status}" for p in qs]
+        )
+    except Exception as e:
+        return f"⚠️ Error listing properties: {str(e)}"
+
+
 def update_property_status(broker_id, property_id, status):
     try:
         prop = Property.objects.get(broker_id = broker_id, property_id = property_id)
@@ -76,6 +103,7 @@ def get_broker_profile(broker_id):
 
 tools = [
     Tool(name="list_properties", func=lambda broker_id, filters = None: list_properties(broker_id, filters), description="List broker's properties. Optionally filter by status or city."),
+
     Tool(name="view_property", func=lambda broker_id, property_id: view_property(broker_id, property_id),
          description="View detailed info of a property by property_id."),
     Tool(name="update_property_status", func=lambda broker_id, property_id, status: update_property_status(broker_id, property_id, status),
