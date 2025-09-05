@@ -46,15 +46,20 @@ def generate_property_message(prop, broker):
 
     details_text = "\n".join(details)
 
-    prompt = f"""Create a clear, structured WhatsApp message to share a property with buyers. 
-    Keep it professional, use minimal emojis (only where suitable), and make it easy to read. 
-    Use bullet points for clarity.
+    prompt = f"""Create a attractive,stylish, forwardable structured WhatsApp message to share a property with buyers. 
+    Keep it professional, and make it easy to read. 
+    - DO NOT add any intro like "here's a message".
+    - Make it ready-to-forward as-is.
+    - Use engaging language and a few relevant emojis.
+    - Highlight the property features compactly.
+    - Keep it easy to scan (short lines, some spacing).
+    - End with broker’s contact details clearly.
 
     Property Details:
     {details_text}
 
-    At the end, add a closing signature like:
-    ---
+    At the end, add a closing signature like, let's connect or something cool:
+    
     Contact Broker:
     {broker.name} ({broker.phone_number})"""
 
