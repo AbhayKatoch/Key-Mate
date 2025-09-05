@@ -104,16 +104,14 @@ def whatsaap_webhook(request):
         phone = from_number.replace("whatsapp:", "")
         resp = MessagingResponse()
 
-        # Get broker
         try:
             broker = Broker.objects.get(phone_number=phone)
         except Broker.DoesNotExist:
             resp.message("👋 Welcome to KeyMate! Please register first. Send your *full name* to start.")
             return HttpResponse(str(resp), content_type="application/xml")
 
-        # Pass to AI agent
         try:
-            answer = agent.run({"input": msg, "broker_id": broker.id})
+            answer = agent.invoke({"input": msg, "broker_id": broker.id})
             resp.message(answer)
         except Exception as e:
             resp.message("⚠️ Sorry, something went wrong. Please try again.")
