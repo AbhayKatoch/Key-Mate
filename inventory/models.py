@@ -64,7 +64,7 @@ class Property(models.Model):
     maintenance = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
     deposit = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
 
-    source = models.CharField(max_length=50, choices=SOURCE_CHOICES, default="direct")
+    source = models.CharField(max_length=50, choices=SOURCE_CHOICES, default="direct", blank=True, null=True)
     source_broker_name = models.CharField(max_length=100, blank=True, null=True)
     source_broker_phone = models.CharField(max_length=15, blank=True, null=True)
 
