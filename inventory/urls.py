@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import BrokerViewSet, PropertyViewSet, MediaViewSet, ClientViewSet
-from .views_twilio import whatsaap_webhook
+from .views_ai import whatsaap_webhook
 
 
 router = DefaultRouter()
