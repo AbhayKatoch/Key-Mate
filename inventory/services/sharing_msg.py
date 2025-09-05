@@ -26,7 +26,7 @@ def generate_property_message(prop, broker):
     if prop.title:
         details.append(f"🏡 {prop.title}")
     if bhk_display:
-        details.append(f"Configuration: {bhk_display}")
+        details.append(f"{bhk_display}")
     if prop.area_sqft:
         details.append(f"Area: {prop.area_sqft} sq.ft.")
     if prop.price:
