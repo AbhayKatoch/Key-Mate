@@ -32,9 +32,9 @@ def generate_property_message(prop, broker):
     if prop.price:
         details.append(f"Price: {prop.price} {prop.currency or ''}")
     if prop.maintenance:
-        details.append(f"Price: {prop.maintenance} {prop.currency or ''}")
+        details.append(f"Maintenance: {prop.maintenance} {prop.currency or ''}")
     if prop.deposit:
-        details.append(f"Price: {prop.deposit} {prop.currency or ''}")
+        details.append(f"Deposit: {prop.deposit} {prop.currency or ''}")
     if prop.sale_or_rent:
         details.append(f"Type: {prop.sale_or_rent.title()}")
     if prop.city or prop.locality:
