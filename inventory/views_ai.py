@@ -26,7 +26,7 @@ COMMANDS = {
 }
 
 @csrf_exempt
-def whatsapp_webhook(request):
+def whatsaap_webhook(request):
     if request.method != "POST":
         return HttpResponse("Invalid request", status=400)
 
