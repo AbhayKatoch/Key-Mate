@@ -42,8 +42,8 @@ prompt = PromptTemplate(
 )
 
 
-chain = model | prompt | parser
+chain = prompt | model | parser
 
 def classify_intent(user_msg : str) -> UserIntent:
-    result = chain.invoke(user_msg = user_msg)
-    return result.content
+    result = chain.invoke({"user_msg": user_msg})
+    return result
