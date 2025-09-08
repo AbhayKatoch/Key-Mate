@@ -27,35 +27,43 @@ COMMANDS = {
 
 @csrf_exempt
 def whatsaap_webhook(request):
-    if request.method != "POST":
-        return HttpResponse("Invalid request", status=400)
-
     body = request.body.decode("utf-8")
-    data = parse_qs(body)
-    msg = data.get("Body", [""])[0]
-    from_number = data.get("From", [""])[0]
-    phone = from_number.replace("whatsapp:", "")
-    resp = MessagingResponse()
 
-    # Check if broker exists
+    data = parse_qs(body)
+    msg = request.POST.get("Body", "").strip()
+
+    from_number = data.get("From",[""])[0]
+
+    phone = from_number.replace("whatsapp:", "")
+
     try:
         broker = Broker.objects.get(phone_number=phone)
     except Broker.DoesNotExist:
-        return HttpResponse(str(handle_onboarding(phone, msg, resp)), content_type="application/xml")
-
-    # Use AI intent classifier
-    try:
-        intent = classify_intent(msg)
-    except Exception as e:
-        resp.message(f"⚠️ Sorry, I couldn’t understand. Type 'help' for commands.")
+        resp = handle_onboarding(phone, msg, resp)
         return HttpResponse(str(resp), content_type="application/xml")
 
-    action = intent.action
+    resp = MessagingResponse()
 
-    if action in COMMANDS:
-        handler = COMMANDS[action]
-        resp = handler(broker, msg, resp)
+        # ✅ Step 1: classify
+    intent = classify_intent(msg)
+
+    # ✅ Step 2: route based on action
+    action_map = {
+        "list_properties": handle_list,
+        "view_property": handle_view,
+        "share_property": handle_share,
+        "edit_property": handle_edit,
+        "delete_property": handle_delete,
+        "activate_property": handle_activate,
+        "disable_property": handle_disable,
+        "profile": handle_profile,
+        "editprofile": handle_editprofile,
+        "help": handle_help,
+    }
+
+    handler = action_map.get(intent.action)
+    if handler:
+        return handler(broker, intent, resp)
     else:
-        resp.message("⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
-
-    return HttpResponse(str(resp), content_type="application/xml")
+        resp.message("❓ Sorry, I didn’t understand that. Type *help* for options.")
+        return HttpResponse(str(resp))
