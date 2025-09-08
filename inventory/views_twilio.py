@@ -225,15 +225,21 @@ EDIT_FIELDS_MAP = {
     "5": "status",
 }
 
-def handle_edit(broker, msg, resp):
-    parts = msg.split()
-    if len(parts) < 2:
-        resp.message("Please provide a property ID. Example: edit 123")
-        return resp
+def handle_edit(broker, intent, resp):
+    # parts = msg.split()
+    # if len(parts) < 2:
+    #     resp.message("Please provide a property ID. Example: edit 123")
+    #     return resp
 
-    property_number = parts[1]
+    # property_number = parts[1]
+
+    property_id = intent.property_id
+    if not property_id:
+        resp.message("⚠️ Please specify which property you want to edit. Example: 'edit 123'")
+        return resp
+    
     try:
-        prop = Property.objects.get(broker=broker, property_id=property_number)
+        prop = Property.objects.get(broker=broker, property_id=property_id)
     except Property.DoesNotExist:
         resp.message("❌ Property not found.")
         return resp
