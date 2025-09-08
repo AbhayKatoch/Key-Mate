@@ -61,9 +61,10 @@ def whatsaap_webhook(request):
         "help": handle_help,
     }
 
-    handler = action_map.get(intent.action)
-    if handler:
-        return handler(broker, intent, resp)
+    action = intent.action
+    if action in COMMANDS:
+        handler = COMMANDS[action]
+        resp = handler(broker, intent, resp)  # pass intent now
     else:
-        resp.message("❓ Sorry, I didn’t understand that. Type *help* for options.")
-        return HttpResponse(str(resp))
+        resp.message("⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
+    return HttpResponse(str(resp), content_type="application/xml")
