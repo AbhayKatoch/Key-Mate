@@ -176,9 +176,20 @@ def handle_delete(broker, msg, resp):
     return resp
         
 
-def handle_list(broker, msg, resp):
-    parts = msg.split()
-    page = int(parts[1]) if len(parts) > 1 else 1
+def handle_list(broker, intent, resp):
+    # parts = msg.split()
+    # page = int(parts[1]) if len(parts) > 1 else 1
+
+    page = intent.filters.get("page", 1) or 1
+    city = intent.filters.get("city")
+
+    qs = Property.objects.filter(broker=broker).order_by("-created_at")
+    if city:
+        qs = qs.filter(city__iexact=city)
+
+    if not qs.exists():
+        resp.message("⚠️ No properties found.")
+        return resp
     page_size = 10
     start = (page - 1) * page_size
     end = start + page_size
@@ -188,10 +199,10 @@ def handle_list(broker, msg, resp):
         return resp
     
     lines = []
-    for p in properties[start:end]:
+    for p in qs[start:end]:
         lines.append(f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.status}")
 
-    total_pages = (properties.count() + page_size -1) // page_size
+    total_pages = (qs.count() + page_size -1) // page_size
 
     reply_text = (
         f"📋 Your properties (Page {page}/{total_pages}):\n\n" +
