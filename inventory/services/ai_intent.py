@@ -8,7 +8,7 @@ import os
 class UserIntent(BaseModel):
     action: str = Field(
         ...,
-        description="The action the user wants to perform. Possible values: list_properties, view_property, share_property, edit_property, delete_property, activate_property, disable_property, profile, editprofile, help."
+        description="The action the user wants to perform. Possible values: new_property, list_properties, view_property, share_property, edit_property, delete_property, activate_property, disable_property, profile, editprofile, help."
     )
     property_id: Optional[str] = Field(
         None,

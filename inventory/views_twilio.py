@@ -119,6 +119,30 @@ def handle_edit_broker_session(broker, msg, resp, session):
         return resp
     
 
+
+def handle_new_property(broker, intent, resp):
+    desc = intent.filters.get("raw_text")
+
+    if not desc:
+        resp.message("⚠️ Please provide a property description to add a new property.")
+        return resp
+    prop = extract(broker, description=desc)
+    prop.status = "active"
+    prop.save()
+
+    session = {
+        "mode": "new_property",
+        "property_id": prop.property_id,
+        "step": "awaiting_media",
+        "media": []
+    }
+    set_session(broker.id, session)
+    resp.message(
+        f"✅ Draft property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
+        "📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
+    )
+    return resp
+
 def handle_help(broker, msg, resp):
     resp.message(
         "*KeyMate Bot Help*\n\n"

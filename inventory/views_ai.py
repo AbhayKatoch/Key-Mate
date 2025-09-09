@@ -9,10 +9,11 @@ from inventory.services.ai_intent import classify_intent
 from .views_twilio import (
     handle_onboarding, handle_list, handle_view, handle_share,
     handle_edit, handle_delete, handle_activate, handle_disable,
-    handle_profile, handle_editprofile, handle_help
+    handle_profile, handle_editprofile, handle_help, handle_new_property
 )
 
 COMMANDS = {
+    "new_property": handle_new_property,
     "list_properties": handle_list,
     "view_property": handle_view,
     "share_property": handle_share,
