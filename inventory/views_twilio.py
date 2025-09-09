@@ -389,15 +389,23 @@ def handle_done(broker, resp):
     )
     return resp
 
-def handle_view(broker, msg, resp):
-    parts = msg.split()
-    if len(parts) < 2:
+def handle_view(broker, intent, resp, msg=None):
+    property_id = intent.property_id
+    # parts = msg.split()
+    # if len(parts) < 2:
+    #     resp.message("⚠️ Please provide a property ID. Example: view 123")
+    #     return resp
+
+
+
+    # property_number = parts[1]
+    if not property_id:
         resp.message("⚠️ Please provide a property ID. Example: view 123")
         return resp
+    
 
-    property_number = parts[1]
     try:
-        prop = Property.objects.get(broker=broker, property_id=property_number)
+        prop = Property.objects.get(broker=broker, property_id=property_id)
     except Property.DoesNotExist:
         resp.message("❌ Property not found.")
         return resp
@@ -452,16 +460,21 @@ def handle_view(broker, msg, resp):
 
 
 #whatsapp sharing
-def handle_share(broker, msg, resp):
-    parts = msg.split()
-    if len(parts) <2 :
-        resp.message("⚠️ Please provide a property ID. Example: share 123")
-        return resp
+def handle_share(broker, intent, resp, msg = None):
+    # parts = msg.split()
+    # if len(parts) <2 :
+    #     resp.message("⚠️ Please provide a property ID. Example: share 123")
+    #     return resp
     
-    property_number = parts[1]
+    # property_number = parts[1]
+
+    property_id = intent.property_id
+    if not property_id:
+        resp.message("⚠️ Please specify a property to share. Example: 'share 123'")
+        return resp
 
     try:
-        prop = Property.objects.get(broker= broker, property_id = property_number)
+        prop = Property.objects.get(broker= broker, property_id = property_id)
     except Property.DoesNotExist:
         resp.message("❌ Property Not Found.")
         return resp
