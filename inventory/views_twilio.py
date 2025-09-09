@@ -120,8 +120,8 @@ def handle_edit_broker_session(broker, msg, resp, session):
     
 
 
-def handle_new_property(broker, intent, resp):
-    desc = intent.filters.get("raw_text")
+def handle_new_property(broker, intent, resp, msg=None):
+    desc = msg.strip()
 
     if not desc:
         resp.message("⚠️ Please provide a property description to add a new property.")
@@ -138,7 +138,7 @@ def handle_new_property(broker, intent, resp):
     }
     set_session(broker.id, session)
     resp.message(
-        f"✅ Draft property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
+        f"✅ property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
         "📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
     )
     return resp
@@ -200,7 +200,7 @@ def handle_delete(broker, msg, resp):
     return resp
         
 
-def handle_list(broker, intent, resp):
+def handle_list(broker, intent, resp, msg=None):
     # parts = msg.split()
     # page = int(parts[1]) if len(parts) > 1 else 1
 
@@ -249,7 +249,7 @@ EDIT_FIELDS_MAP = {
     "5": "status",
 }
 
-def handle_edit(broker, intent, resp):
+def handle_edit(broker, intent, resp, msg=None):
     # parts = msg.split()
     # if len(parts) < 2:
     #     resp.message("Please provide a property ID. Example: edit 123")
