@@ -144,7 +144,6 @@ def handle_new_property(broker, intent, resp, msg=None):
         f"[{prop.property_id}] {prop.title or ''}",
     ]
 
-    # Add BHK + City + Sale/Rent only if present
     if prop.bhk and prop.city and prop.sale_or_rent:
         lines.append(f" {prop.bhk} BHK in {prop.city} for {prop.sale_or_rent}")
     elif prop.city and prop.sale_or_rent:
@@ -376,8 +375,21 @@ def handle_media(broker, data, resp):
     if not session or session.get("mode") != "new_property":
         resp.message("⚠️ No active property creation in progress.")
         return resp
+    
+    property_id = session.get("property_id")
+    if not property_id:
+        resp.message("⚠️ No property linked to this session.")
+        return resp
+
+    try:
+        prop = Property.objects.get(broker=broker, property_id=property_id)
+    except Property.DoesNotExist:
+        resp.message("⚠️ Property not found.")
+        clear_session(broker.id)
+        return resp
 
     num_media = int(data.get("NumMedia", [0])[0] or 0)
+    added =0
     for i in range(num_media):
         media_url = data.get(f"MediaUrl{i}", [None])[0]
         content_type = data.get(f"MediaContentType{i}", [""])[0]
@@ -391,16 +403,30 @@ def handle_media(broker, data, resp):
             media_type, ext = "other", "bin"
 
         public_url = fetch_and_store_media(media_url, broker.id, i, ext)
-        session["media"].append({"url": public_url, "type": media_type, "order": i})
+        
+        MediaAsset.objects.create(
+                property=prop,
+                media_type=media_type,
+                storage_url=public_url,
+                order=i
+            )
+        added += 1
 
-    set_session(broker.id, session)
-    resp.message(f"📥 Added {num_media} file(s). Upload more or type 'done' when finished.")
+    resp.message(f"📥 Added {added} file(s). Upload more or type *done* when finished.")
     return resp
 
 def handle_done(broker, resp):
     session = get_session(broker.id)
     if not session or session.get("mode") != "new_property":
         resp.message("⚠️ Nothing to finalize.")
+        return resp
+
+    property_id = session.get("property_id")
+    try:
+        prop = Property.objects.get(broker=broker, property_id=property_id)
+    except Property.DoesNotExist:
+        resp.message("⚠️ Property not found.")
+        clear_session(broker.id)
         return resp
 
     description = session["description"]
