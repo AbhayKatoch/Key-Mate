@@ -166,16 +166,16 @@ def handle_help(broker, intent, resp, msg=None):
     )
     return resp
 
-# def handle_activate(broker, msg, resp):
-#     property_number = msg.split()[-1]
-#     try:
-#         prop = Property.objects.get(broker = broker, property_id=property_number)
-#         prop.status = "active"
-#         prop.save()
-#         resp.message(f"✅ {prop.property_id} | {prop.title} is now active")
-#     except Property.DoesNotExist:
-#         resp.message("❌ Property not found.")
-#     return  resp
+def handle_activate(broker, msg, resp):
+    property_number = msg.split()[-1]
+    try:
+        prop = Property.objects.get(broker = broker, property_id=property_number)
+        prop.status = "active"
+        prop.save()
+        resp.message(f"✅ {prop.property_id} | {prop.title} is now active")
+    except Property.DoesNotExist:
+        resp.message("❌ Property not found.")
+    return  resp
 
 def handle_disable(broker, intent, resp, msg=None):
     property_number = intent.property_id
