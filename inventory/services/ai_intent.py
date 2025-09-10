@@ -43,6 +43,9 @@ prompt = PromptTemplate(
         - profile\n
         - editprofile\n
         - help\n\n
+
+        If the message looks like a property description (location, rent, deposit, bhk, etc.),
+        then classify as 'new_property'.
         Output in JSON following this schema:\n{format_instructions}
         """
     ),
