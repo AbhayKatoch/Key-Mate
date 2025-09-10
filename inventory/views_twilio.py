@@ -65,7 +65,7 @@ def handle_onboarding(phone, msg, resp):
     
     return resp
 
-def handle_profile(broker, msg, resp):
+def handle_profile(broker, intent, resp, msg=None):
     lines = [f"👤 *Your Profile*",
              f"Name: {broker.name or 'N/A'}",
              f"Phone: {broker.phone_number}",
@@ -75,7 +75,7 @@ def handle_profile(broker, msg, resp):
     resp.message("\n".join(lines) + "\n\n👉 Reply 'editprofile' to update your details.")
     return resp
 
-def handle_editprofile(broker, msg, resp):
+def handle_editprofile(broker, intent, resp, msg=None):
     session = {
         "mode": "edit_broker",
         "step": "choose_field",
@@ -143,7 +143,7 @@ def handle_new_property(broker, intent, resp, msg=None):
     )
     return resp
 
-def handle_help(broker, msg, resp):
+def handle_help(broker, intent, resp, msg=None):
     resp.message(
         "*KeyMate Bot Help*\n\n"
         "Here are the commands you can use:\n\n"
@@ -166,19 +166,22 @@ def handle_help(broker, msg, resp):
     )
     return resp
 
-def handle_activate(broker, msg, resp):
-    property_number = msg.split()[-1]
-    try:
-        prop = Property.objects.get(broker = broker, property_id=property_number)
-        prop.status = "active"
-        prop.save()
-        resp.message(f"✅ {prop.property_id} | {prop.title} is now active")
-    except Property.DoesNotExist:
-        resp.message("❌ Property not found.")
-    return  resp
+# def handle_activate(broker, msg, resp):
+#     property_number = msg.split()[-1]
+#     try:
+#         prop = Property.objects.get(broker = broker, property_id=property_number)
+#         prop.status = "active"
+#         prop.save()
+#         resp.message(f"✅ {prop.property_id} | {prop.title} is now active")
+#     except Property.DoesNotExist:
+#         resp.message("❌ Property not found.")
+#     return  resp
 
-def handle_disable(broker, msg, resp):
-    property_number = msg.split()[-1]
+def handle_disable(broker, intent, resp, msg=None):
+    property_number = intent.property_id
+    if not property_number:
+        resp.message("⚠️ Provide a property ID. Example: 'disable 123'")
+        return resp
     try: 
         prop = Property.objects.get(broker = broker, property_id=property_number)
         prop.status = "disabled"
@@ -189,8 +192,11 @@ def handle_disable(broker, msg, resp):
     return resp
                 
 
-def handle_delete(broker, msg, resp):
-    property_number = msg.split()[-1]
+def handle_delete(broker, intent, resp, msg=None):
+    property_number = intent.property_id
+    if not property_number:
+        resp.message("⚠️ Please provide a property ID to delete. Example: 'delete 123'")
+        return resp
     try: 
         prop = Property.objects.get(broker = broker, property_id=property_number)
         prop.delete()
@@ -204,8 +210,8 @@ def handle_list(broker, intent, resp, msg=None):
     # parts = msg.split()
     # page = int(parts[1]) if len(parts) > 1 else 1
 
-    page = intent.filters.get("page", 1) or 1
-    city = intent.filters.get("city")
+    page = intent.filters.get("page", 1) if intent.filters else 1
+    city = intent.filters.get("city") if intent.filters else None
 
     qs = Property.objects.filter(broker=broker).order_by("-created_at")
     if city:
@@ -217,13 +223,14 @@ def handle_list(broker, intent, resp, msg=None):
     page_size = 10
     start = (page - 1) * page_size
     end = start + page_size
+    props = qs[start:end]
     properties = Property.objects.filter(broker = broker).order_by("-created_at")
     if not properties:
         resp.message("You don't have any properties yet.")
         return resp
     
     lines = []
-    for p in qs[start:end]:
+    for p in props:
         lines.append(f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.status}")
 
     total_pages = (qs.count() + page_size -1) // page_size
@@ -288,7 +295,7 @@ def handle_edit(broker, intent, resp, msg=None):
     return resp
 
 
-def handle_desc(broker, msg, resp):
+def handle_desc(broker, intent, resp, msg=None):
     session = {
         "mode": "new_property",
         "step": "awaiting_media",
