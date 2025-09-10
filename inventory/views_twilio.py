@@ -138,7 +138,19 @@ def handle_new_property(broker, intent, resp, msg=None):
     }
     set_session(broker.id, session)
     resp.message(
-        f"✅ property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
+        f"✅ New Property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
+        f"[{prop.property_id}] {prop.title} \n"
+        f" {prop.bhk or ''} BHK in {prop.city or ''} for {prop.sale_or_rent}\n"
+        f" {prop.area_sqft or 'N/A'} sqrt\n"
+        f" {prop.furnishing or ''}\n"
+        f" {prop.price or 'N/A'} {prop.currency}\n"
+        f" near {prop.locality}\n"
+        f" Status: {prop.status.title()}\n\n"
+        f"👉 Reply 'list' to see all your properties\n"
+        f"👉 Reply 'edit {prop.property_id}' to edit this property\n"
+        f"👉 Reply 'share {prop.property_id}' to share the property\n"
+        f"👉 Reply 'delete {prop.property_id}' to remove the property\n"
+        f"👉 Reply 'help' for command guide"
         "📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
     )
     return resp
