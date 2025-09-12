@@ -12,10 +12,15 @@ import os
 import requests
 import cloudinary.uploader
 from .services.sharing_msg import generate_property_message
+from .services.ai_intent import classify_customer_intent
+from twilio.rest import Client
+from inventory.views_customer import handle_list_customer, handle_view_customer
 
 load_dotenv()
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+
 
 def handle_onboarding(phone, msg, resp):
     session = get_session(phone)
@@ -582,6 +587,45 @@ def whatsaap_webhook(request):
             resp = handle_onboarding(phone, msg, resp)
             return HttpResponse(str(resp), content_type="application/xml")
 
+        # if msg.lower().startswith("yes") or msg.lower().startswith("no"):
+        #     parts = msg.split()
+        #     if len(parts) >= 2:
+        #         customer_number = parts[1]  # e.g. +91999…
+        #         session_key = f"permission:{broker.id}:{customer_number}"
+        #         session = get_session(session_key)
+        #         if session:
+        #             permission_resp = MessagingResponse()
+        #             if msg.lower().startswith("yes"):
+        #                 session["allowed"] = True
+        #                 set_session(session_key, session)
+        #                 permission_resp.message(f"✅ Permission granted for customer {customer_number}.")
+
+        #                 # ✅ Immediately process the pending query
+        #                 pending_msg = session.get("pending_msg", "")
+        #                 if pending_msg:
+        #                     intent = classify_customer_intent(pending_msg)
+        #                     # Build TwiML using the same customer handlers but we need MessagingResponse:
+        #                     tmp_resp = MessagingResponse()
+        #                     if intent.action == "list_properties":
+        #                         tmp_resp = handle_list_customer(broker, intent, tmp_resp)
+        #                     elif intent.action == "view_property":
+        #                         tmp_resp = handle_view_customer(broker, intent, tmp_resp)
+        #                     else:
+        #                         tmp_resp.message("Sorry, I didn’t understand.")
+
+        #                     # Send to customer proactively using Twilio REST API
+        #                     client.messages.create(
+        #                         from_=f"whatsapp:{broker.phone_number}",  # broker's WABA number
+        #                         to=f"whatsapp:{customer_number}",
+        #                         body="\n".join([m.body for m in tmp_resp.messages if m.body])
+        #                     )
+        #                     # Note: for media you would need to send separate messages
+
+        #             else:
+        #                 clear_session(session_key)
+        #                 permission_resp.message(f"❌ Permission denied for customer {customer_number}.")
+
+        #             return HttpResponse(str(permission_resp), content_type="application/xml")
 
         session = get_session(broker.id)
         if session:

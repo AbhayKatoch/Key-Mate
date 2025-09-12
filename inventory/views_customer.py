@@ -8,12 +8,12 @@ from .services.redis_setup import get_session, set_session, clear_session
 from .services.ai_intent import classify_customer_intent
 from .services.sharing_msg import generate_property_message
 
-def handle_list_properties(intent, resp):
+def handle_list_properties(intent, resp, broker):
     page = intent.filters.get("page", 1) or 1
     city = intent.filters.get("city")
     bhk = intent.get("bhk")
     price_filter = intent.get("price")
-    qs = Property.objects.filter(status="active").order_by("-created_at")
+    qs = Property.objects.filter(broker=broker,status="active").order_by("-created_at")
 
     if city:
         qs = qs.filter(city__iexact=city)
@@ -77,14 +77,14 @@ def handle_list_properties(intent, resp):
     resp.message(reply_text)
     return resp
 
-def handle_view_property(intent, resp):
+def handle_view_property(intent, resp, broker):
     property_id = intent.property_id
     if not property_id:
         resp.message("⚠️ Please provide a property ID. Example: view 123")
         return resp
     
     try:
-        prop = Property.objects.get(property_id=property_id, status="active")
+        prop = Property.objects.get(property_id=property_id, broker=broker, status="active")
     except Property.DoesNotExist:
         resp.message("Property Not Found")
         return resp
@@ -125,10 +125,35 @@ def customer_webhook(request):
     if request.method == "POST":
         body = request.body.decode("utf-8")
         data = parse_qs(body)
-        msg = data.get("Body", [""])[0]
+        msg = data.get("Body", [""])[0].strip()
+        to_number = data.get("To", [""])[0].replace("whatsapp:","")
         from_number = data.get("From", [""])[0].replace("whatsapp:", "")
 
+
+        broker= Broker.objects.filter(phone_number=to_number).first()
+
         resp = MessagingResponse()
+        if not broker:
+            resp.message("⚠️ Broker not found.")
+            return HttpResponse(str(resp), content_type="application/xml")
+
+        # session_key = f"permission:{broker.id}:{from_number}"
+        # session = get_session(session_key)
+
+        # if not session:
+        #     permission_msg = (
+        #         f"📩 Customer {from_number} wants to see properties.\n\n"
+        #         f"Message:\n{msg}\n\n"
+        #         f"Reply YES {from_number} to allow or NO {from_number} to decline."
+        #     )
+        #     broker_resp = MessagingResponse()
+        #     broker_resp.message(permission_msg)
+        #     set_session(session_key, {"pending_msg":msg})
+        #     resp.message("Please wait..")
+        #     return HttpResponse(str(resp), content_type = "application/xml")
+        
+        # elif session.get("allowd"):
+
 
         intent = classify_customer_intent(msg)
 
@@ -139,7 +164,7 @@ def customer_webhook(request):
 
         if intent.action in COMMANDS:
             handler = COMMANDS[intent.action]
-            resp = handler(from_number, intent, resp, msg)
+            resp = handler(intent, resp, broker)
         else:
             resp.message("⚠️ Sorry, I didn’t understand. You can say 'show flats in Mumbai' or 'view 10'.")
 
