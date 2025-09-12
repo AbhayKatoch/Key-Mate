@@ -9,10 +9,12 @@ from .services.ai_intent import classify_customer_intent
 from .services.sharing_msg import generate_property_message
 
 def handle_list_properties(intent, resp, broker):
-    page = intent.filters.get("page", 1) or 1
-    city = intent.filters.get("city")
-    bhk = intent.get("bhk")
-    price_filter = intent.get("price")
+    filters = intent.filters if isinstance(intent.filters, dict) else {}
+
+    page = filters.get("page", 1) or 1
+    city = filters.get("city")
+    bhk = filters.get("bhk")
+    price_filter = filters.get("price")
     qs = Property.objects.filter(broker=broker,status="active").order_by("-created_at")
 
     if city:
