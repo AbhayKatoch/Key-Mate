@@ -14,7 +14,7 @@ import cloudinary.uploader
 from .services.sharing_msg import generate_property_message
 from .services.ai_intent import classify_customer_intent
 from twilio.rest import Client
-from inventory.views_customer import handle_list_customer, handle_view_customer
+# from inventory.views_customer import handle_list_customer, handle_view_customer
 
 load_dotenv()
 TWILIO_SID = os.getenv("TWILIO_SID")
