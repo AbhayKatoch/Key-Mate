@@ -66,7 +66,7 @@ def classify_intent(user_msg : str) -> UserIntent:
 class CustomerIntent(BaseModel):
     action: str = Field(..., description="The action the customer wants to perform. Possible values: list_properties, view_property, contact_broker, help.")
     property_id: Optional[str] = Field(None, description="The unique ID of the property if the customer explicitly refers to one. Required for view_property and contact_broker.")
-    filters: Optional[str] = Field(default_factory=dict, description="Search filters when listing properties, such as {'city': 'Mumbai'}.")
+    filters: Optional[dict] = Field(default_factory=dict, description="Search filters when listing properties, such as {'city': 'Mumbai'}.")
 
 
 customer_parser = PydanticOutputParser(pydantic_object=CustomerIntent)
