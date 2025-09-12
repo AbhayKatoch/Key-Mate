@@ -130,9 +130,8 @@ def customer_webhook(request):
         msg = data.get("Body", [""])[0].strip()
         to_number = data.get("To", [""])[0].replace("whatsapp:","")
         from_number = data.get("From", [""])[0].replace("whatsapp:", "")
-        BROKER_PHONE_FOR_TEST = "+917814469106"
 
-        broker= Broker.objects.filter(phone_number=BROKER_PHONE_FOR_TEST).first()
+        broker= Broker.objects.filter(phone_number=to_number).first()
 
         resp = MessagingResponse()
         if not broker:
