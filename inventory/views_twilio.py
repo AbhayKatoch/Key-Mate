@@ -567,6 +567,70 @@ def handle_share(broker, intent, resp, msg = None):
 
     return resp
 
+import re
+def handle_share_all_to_client(broker, intent, resp, msg=None):
+    client_number = intent.client_number
+    filters = intent.filters or {}
+
+    if not client_number:
+        resp.message("⚠️ Please specify a customer number. Example:\nshare all 2BHK in Pune to +919876543210")
+        return resp
+
+    qs = Property.objects.filter(broker=broker, status="active").order_by("-created_at")
+
+    if "city" in filters:
+        qs = qs.filter(city__iexact=filters["city"])
+    if "bhk" in filters:
+        try:
+            qs = qs.filter(bhk=int(filters["bhk"]))
+        except ValueError:
+            pass
+    if "price" in filters:
+        import re
+        price_filter = filters["price"]
+        match = re.match(r"(<=|>=|<|>|=)?\s*([\d,.]+)", str(price_filter))
+        if match:
+            op, val = match.groups()
+            val = float(val.replace(",", ""))
+            if op in ("<", "<="):
+                qs = qs.filter(price__lte=val)
+            elif op in (">", ">="):
+                qs = qs.filter(price__gte=val)
+            else:
+                qs = qs.filter(price__lte=val)
+
+    if not qs.exists():
+        resp.message("⚠️ No matching properties found.")
+        return resp
+
+    sent_props = []
+    for prop in qs[:5]:  # send up to 5
+        text_msg = generate_property_message(prop, broker)
+        client.messages.create(
+            from_=f"whatsapp:{broker.phone_number}",
+            to=f"whatsapp:{client_number}",
+            body=text_msg
+        )
+
+        for media in prop.media.all():
+            client.messages.create(
+                from_=f"whatsapp:{broker.phone_number}",
+                to=f"whatsapp:{client_number}",
+                body="📸 Property Media" if media.media_type == "image" else "🎥 Property Video",
+                media_url=[media.storage_url]
+            )
+
+        sent_props.append(prop.property_id)
+
+    # ClientRequest.objects.create(
+    #     broker=broker,
+    #     query=msg,
+    #     ai_structure=filters,
+    #     response={"properties": sent_props, "sent_to": client_number}
+    # )
+
+    resp.message(f"✅ Shared {len(sent_props)} property(s) with {client_number}")
+    return resp
 
 @csrf_exempt
 def whatsaap_webhook(request):

@@ -9,7 +9,7 @@ from inventory.services.ai_intent import classify_intent
 from .models import Broker, Property
 from .views_twilio import (
     handle_onboarding, handle_list, handle_view, handle_share,
-    handle_edit, handle_delete, handle_activate, handle_disable,
+    handle_edit, handle_delete, handle_activate, handle_disable, handle_share_all_to_client,
     handle_profile, handle_editprofile, handle_help, handle_new_property, handle_edit_broker_session, handle_done, handle_desc, handle_media
 )
 
@@ -18,6 +18,7 @@ COMMANDS = {
     "list_properties": handle_list,
     "view_property": handle_view,
     "share_property": handle_share,
+    "share_all_to_client": handle_share_all_to_client,
     "edit_property": handle_edit,
     "delete_property": handle_delete,
     "activate_property": handle_activate,

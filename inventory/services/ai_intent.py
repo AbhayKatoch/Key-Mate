@@ -36,6 +36,7 @@ prompt = PromptTemplate(
         - list_properties (with optional filters like city, price)\n
         - view_property (requires property_id)\n
         - share_property (requires property_id)\n
+        - share_all_to_client (requires filters + client_number)\n
         - edit_property (requires property_id)\n
         - delete_property (requires property_id)\n
         - activate_property (requires property_id)\n
