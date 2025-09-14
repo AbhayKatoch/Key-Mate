@@ -18,6 +18,10 @@ class UserIntent(BaseModel):
         default_factory=dict,
         description="Search filters when listing properties, such as {'city': 'Pune', 'price': '<=5000000'}."
     )
+    client_number: Optional[str] = Field(
+        None,
+        description="The target customer phone number when broker shares multiple properties."
+    )
 
 model = ChatGroq(
     model = "llama-3.3-70b-versatile",
@@ -47,6 +51,7 @@ prompt = PromptTemplate(
 
         If the message looks like a property description (location, rent, deposit, bhk, etc.),
         then classify as 'new_property'.
+        If the broker message includes 'to +91...' treat it as share_all_to_client and extract client_number.
         Output in JSON following this schema:\n{format_instructions}
         """
     ),
