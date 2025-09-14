@@ -607,14 +607,14 @@ def handle_share_all_to_client(broker, intent, resp, msg=None):
     for prop in qs[:5]:  # send up to 5
         text_msg = generate_property_message(prop, broker)
         client.messages.create(
-            from_=f"whatsapp:{broker.phone_number}",
+            from_=f"whatsapp:+14155238886",
             to=f"whatsapp:{client_number}",
             body=text_msg
         )
 
         for media in prop.media.all():
             client.messages.create(
-                from_=f"whatsapp:{broker.phone_number}",
+                from_=f"whatsapp:+14155238886",
                 to=f"whatsapp:{client_number}",
                 body="📸 Property Media" if media.media_type == "image" else "🎥 Property Video",
                 media_url=[media.storage_url]
