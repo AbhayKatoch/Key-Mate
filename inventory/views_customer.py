@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from urllib.parse import parse_qs
 import re
-from .models import Property, Broker, MediaAsset
+from .models import Property, Broker, MediaAsset, Session
 from .services.redis_setup import get_session, set_session, clear_session
 from .services.ai_intent import classify_customer_intent
 from .services.sharing_msg import generate_property_message
@@ -154,6 +154,30 @@ def customer_webhook(request):
         #     return HttpResponse(str(resp), content_type = "application/xml")
         
         # elif session.get("allowd"):
+
+        if msg.startswith("KD-BROKER-"):
+            broker_id = int(msg.split("-")[-1])
+            broker = Broker.objects.filter(id = broker_id).first()
+            if broker:
+                Session.objects.update_or_create(
+                    client_phone = from_number,
+                    defaults={"broker": broker}
+                )
+                resp.message(f"Hey, I am {broker.name}'s assistant! Ask me about properties anytime.")
+                return HttpResponse(str(resp), content_type="application/xml")
+            else:
+                resp.message("Broker not found")
+                return HttpResponse(str(resp), content_type= "application/xml")
+        
+        session = Session.objects.filter(client_phone = from_number).first()
+        if session:
+            broker = session.broker
+        else:
+            broker = Broker.objects.filter(phone_number = to_number).first()
+        
+        if not broker:
+            resp.message("⚠️ Broker not found. Please click your broker’s link to start.")
+            return HttpResponse(str(resp), content_type="application/xml")
 
 
         intent = classify_customer_intent(msg)

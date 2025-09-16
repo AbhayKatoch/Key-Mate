@@ -8,6 +8,22 @@ class Broker(models.Model):
     email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    broker_code = models.CharField(max_length=50, blank=True, unique=True)
+    
+
+    def save(self, *args, **kwargs):
+        # Ensure id exists
+        if not self.id:
+            self.id = uuid.uuid4()
+        if not self.broker_code:
+            self.broker_code = f"KD-BROKER-{self.id}"
+        super().save(*args, **kwargs)
+
+
+    @property
+    def whatsapp_link(self):
+        bot_number = "+14155238886"
+        return f"https://wa.me/{bot_number}?text=KD-BROKER-{self.id}"
 
     def __str__(self):
         return f"{self.name or self.phone_number}"
@@ -118,3 +134,13 @@ class ClientRequest(models.Model):
 
     def __str__(self):
         return f"Request by {self.broker} at {self.created_at}"
+    
+
+
+class Session(models.Model):
+    broker = models.ForeignKey(Broker, on_delete=models.CASCADE)
+    client_phone = models.CharField(max_length=20, unique=True)
+    last_message_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.client_phone}->{self.broker.name}"
