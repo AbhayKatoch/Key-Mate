@@ -131,13 +131,9 @@ def customer_webhook(request):
         to_number = data.get("To", [""])[0].replace("whatsapp:","")
         from_number = data.get("From", [""])[0].replace("whatsapp:", "")
 
-        broker= Broker.objects.filter(phone_number=to_number).first()
 
         resp = MessagingResponse()
-        if not broker:
-            resp.message("⚠️ Broker not found.")
-            return HttpResponse(str(resp), content_type="application/xml")
-
+        
         # session_key = f"permission:{broker.id}:{from_number}"
         # session = get_session(session_key)
 
@@ -156,8 +152,8 @@ def customer_webhook(request):
         # elif session.get("allowd"):
 
         if msg.startswith("KD-BROKER-"):
-            broker_id = Broker.objects.filter(broker_code__iexact = msg.strip()).first()
-            if broker_id:
+            broker = Broker.objects.filter(broker_code__iexact = msg.strip()).first()
+            if broker:
                 Session.objects.update_or_create(
                     client_phone = from_number,
                     defaults={"broker": broker}
