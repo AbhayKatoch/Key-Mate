@@ -47,6 +47,7 @@ prompt = PromptTemplate(
         - disable_property (requires property_id)\n
         - profile\n
         - editprofile\n
+        - boturl\n
         - help\n\n
 
         If the message looks like a property description (location, rent, deposit, bhk, etc.),

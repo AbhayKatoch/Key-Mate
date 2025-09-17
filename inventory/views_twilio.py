@@ -228,7 +228,7 @@ def handle_disable(broker, intent, resp, msg=None):
     except Property.DoesNotExist:
         resp.message("Property not found")
     return resp
-                
+    
 
 def handle_delete(broker, intent, resp, msg=None):
     property_number = intent.property_id
@@ -632,6 +632,17 @@ def handle_share_all_to_client(broker, intent, resp, msg=None):
     resp.message(f"✅ Shared {len(sent_props)} property(s) with {client_number}")
     return resp
 
+
+def handle_bot_url(broker, intent, resp, msg= None):
+    link = broker.whatsapp_link
+    resp.message(
+        f"🔗 *Your WhatsApp Bot Link*\n\n"
+        f"Send this link to your clients to chat directly with your bot:\n\n"
+        f"{link}\n\n"
+        f"When your client clicks this link, they’ll automatically be mapped to you."
+    )
+    return resp
+
 @csrf_exempt
 def whatsaap_webhook(request):
 
@@ -773,7 +784,8 @@ def whatsaap_webhook(request):
             "help": handle_help,
             "profile": handle_profile,
             "editprofile": handle_editprofile,
-            "share": handle_share
+            "share": handle_share,
+            "boturl": handle_bot_url
 
         }
 

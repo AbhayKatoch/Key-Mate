@@ -10,7 +10,7 @@ from .models import Broker, Property
 from .views_twilio import (
     handle_onboarding, handle_list, handle_view, handle_share,
     handle_edit, handle_delete, handle_activate, handle_disable, handle_share_all_to_client,
-    handle_profile, handle_editprofile, handle_help, handle_new_property, handle_edit_broker_session, handle_done, handle_desc, handle_media
+    handle_profile, handle_editprofile, handle_help, handle_new_property, handle_edit_broker_session, handle_done, handle_desc, handle_media, handle_bot_url
 )
 
 COMMANDS = {
@@ -26,6 +26,7 @@ COMMANDS = {
     "profile": handle_profile,
     "editprofile": handle_editprofile,
     "help": handle_help,
+    "boturl": handle_bot_url
 }
 
 @csrf_exempt
