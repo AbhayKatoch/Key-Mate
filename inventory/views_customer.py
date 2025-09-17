@@ -156,8 +156,8 @@ def customer_webhook(request):
         # elif session.get("allowd"):
 
         if msg.startswith("KD-BROKER-"):
-            broker_id = int(msg.split("-")[-1])
-            broker = Broker.objects.filter(id = broker_id).first()
+            broker_uuid = msg.replace("KD-BROKER-","").strip()
+            broker = Broker.objects.filter(id = broker_uuid).first()
             if broker:
                 Session.objects.update_or_create(
                     client_phone = from_number,
