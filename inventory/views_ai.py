@@ -272,8 +272,10 @@ def whatsapp_webhook_meta(request):
                 from twilio.twiml.messaging_response import MessagingResponse
                 resp = MessagingResponse()
                 resp = handle_done(broker, resp)
-                for m in resp.messages:
-                    send_whatsapp_text(from_number, m.body)
+                # for m in resp.messages:
+                #     send_whatsapp_text(from_number, m.body)
+                for m in get_texts_from_resp(resp):
+                    send_whatsapp_text(from_number, m)
                 return HttpResponse(status=200)
 
             num_media = len(msg_obj.get("image", {}))  # adapt for media
@@ -281,8 +283,10 @@ def whatsapp_webhook_meta(request):
                 from twilio.twiml.messaging_response import MessagingResponse
                 resp = MessagingResponse()
                 resp = handle_media(broker, msg_obj, resp)
-                for m in resp.messages:
-                    send_whatsapp_text(from_number, m.body)
+                # for m in resp.messages:
+                #     send_whatsapp_text(from_number, m.body)
+                for m in get_texts_from_resp(resp):
+                    send_whatsapp_text(from_number, m)
                 return HttpResponse(status=200)
 
         # 🔹 Edit broker profile flow
@@ -290,8 +294,10 @@ def whatsapp_webhook_meta(request):
             from twilio.twiml.messaging_response import MessagingResponse
             resp = MessagingResponse()
             resp = handle_edit_broker_session(broker, text_body, resp, session)
-            for m in resp.messages:
-                send_whatsapp_text(from_number, m.body)
+            # for m in resp.messages:
+            #     send_whatsapp_text(from_number, m.body)
+            for m in get_texts_from_resp(resp):
+                send_whatsapp_text(from_number, m)
             return HttpResponse(status=200)
 
     # ✅ No session → use AI intent classification
@@ -306,9 +312,12 @@ def whatsapp_webhook_meta(request):
         from twilio.twiml.messaging_response import MessagingResponse
         resp = MessagingResponse()
         resp = COMMANDS[action](broker, intent, resp, msg=text_body)
-        for m in resp.messages:
-            if m.body:
-                send_whatsapp_text(from_number, m.body)
+        # for m in resp.messages:
+        #     if m.body:
+        #         send_whatsapp_text(from_number, m.body)
+        for m in get_texts_from_resp(resp):
+            if m:
+                send_whatsapp_text(from_number, m)
             # if your handlers attach media you can also loop m.media and send_whatsapp_media
     else:
         send_whatsapp_text(from_number, "⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
