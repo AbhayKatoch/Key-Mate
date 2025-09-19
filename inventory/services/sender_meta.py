@@ -3,7 +3,7 @@ import os, requests
 
 META_TOKEN = os.getenv("META_TOKEN")  # from Facebook developer app
 PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID")  # your WABA ID
-
+import logging
 def send_whatsapp_text(to, text):
     url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
     headers = {
