@@ -257,26 +257,35 @@ def handle_new_property(broker, intent=None, msg=None):
     )
     return resp
 
-def handle_help(broker, intent, resp, msg=None):
-    resp.message(
+# def handle_help(broker, intent, resp, msg=None):
+#     resp.message(
+#         "*KeyMate Bot Help*\n\n"
+#         "Here are the commands you can use:\n\n"
+#         "🏡 Property Management:\n"
+#         "- Send property description → Add new property\n"
+#         "- Upload images/videos → Attach media\n"
+#         "- done / skip → Finish adding property\n"
+#         "- list → View all your properties\n"
+#         "- view <property_id> → View property details\n"
+#         "- edit <property_id> → Edit property\n"
+#         "- share <property_id> → Share property\n"
+#         "- delete <property_id> → Delete property\n"
+#         "- activate <property_id> → Activate property\n"
+#         "- disable <property_id> → Disable property\n\n"
+#         "👤 Profile Management:\n"
+#         "- profile → View your broker profile\n"
+#         "- editprofile → Edit your profile details\n\n"
+#         "❓ Help:\n"
+#         "- help → For your help guide"
+#     )
+#     return resp
+def handle_help(broker, intent=None, msg=None):
+    resp = make_response()
+    resp["texts"].append(
         "*KeyMate Bot Help*\n\n"
-        "Here are the commands you can use:\n\n"
-        "🏡 Property Management:\n"
-        "- Send property description → Add new property\n"
-        "- Upload images/videos → Attach media\n"
-        "- done / skip → Finish adding property\n"
-        "- list → View all your properties\n"
-        "- view <property_id> → View property details\n"
-        "- edit <property_id> → Edit property\n"
-        "- share <property_id> → Share property\n"
-        "- delete <property_id> → Delete property\n"
-        "- activate <property_id> → Activate property\n"
-        "- disable <property_id> → Disable property\n\n"
-        "👤 Profile Management:\n"
-        "- profile → View your broker profile\n"
-        "- editprofile → Edit your profile details\n\n"
-        "❓ Help:\n"
-        "- help → For your help guide"
+        "🏡 Property:\nlist, view <id>, edit <id>, delete <id>, disable <id>, activate <id>, share <id>\n\n"
+        "👤 Profile:\nprofile, editprofile\n\n"
+        "❓ Help:\nhelp"
     )
     return resp
 

@@ -316,9 +316,8 @@ def whatsapp_webhook_meta(request):
         # for m in resp.messages:
         #     if m.body:
         #         send_whatsapp_text(from_number, m.body)
-        for m in get_texts_from_resp(resp):
-            if m:
-                send_whatsapp_text(from_number, m)
+        for txt in messages["texts"]:
+            send_whatsapp_text(from_number, txt)
             # if your handlers attach media you can also loop m.media and send_whatsapp_media
     else:
         send_whatsapp_text(from_number, "⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
