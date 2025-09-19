@@ -15,7 +15,6 @@ def send_whatsapp_text(to, text):
         "to": to,
         "text": {"body": text}
     }
-    requests.post(url, headers=headers, json=data)
     r = requests.post(url, headers=headers, json=data)
     logging.info(f"Meta send text -> {to} | status {r.status_code} | resp {r.text}")
 
