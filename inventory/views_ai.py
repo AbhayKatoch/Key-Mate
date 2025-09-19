@@ -147,6 +147,24 @@ def whatsaap_webhook(request):
 
 import os
 VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN")
+from xml.etree import ElementTree
+
+def get_texts_from_resp(resp):
+    """
+    Extracts all <Body> messages from a Twilio MessagingResponse.
+    Useful when reusing Twilio handlers for Meta.
+    """
+    texts = []
+    try:
+        root = ElementTree.fromstring(str(resp))
+        for msg in root.findall("Message"):
+            body = msg.find("Body")
+            if body is not None and body.text:
+                texts.append(body.text)
+    except Exception:
+        pass
+    return texts
+
 @csrf_exempt
 def whatsapp_webhook_meta(request):
     """
@@ -191,8 +209,8 @@ def whatsapp_webhook_meta(request):
         from twilio.twiml.messaging_response import MessagingResponse
         resp = MessagingResponse()
         resp = handle_onboarding(from_number, text_body, resp)
-        for m in resp.messages:
-            send_whatsapp_text(from_number, m.body)
+        for m in get_texts_from_resp(resp):
+            send_whatsapp_text(from_number, m)
         return HttpResponse(status=200)
 
     # ✅ Check session first
