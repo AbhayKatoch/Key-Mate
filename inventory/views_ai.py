@@ -206,11 +206,12 @@ def whatsapp_webhook_meta(request):
         # Onboarding new broker
         # Here we simulate resp.message with a send_whatsapp_text
         # handle_onboarding still returns a Twilio MessagingResponse, so we extract text(s)
-        from twilio.twiml.messaging_response import MessagingResponse
-        resp = MessagingResponse()
-        resp = handle_onboarding(from_number, text_body, resp)
-        for m in get_texts_from_resp(resp):
-            send_whatsapp_text(from_number, m)
+        messages = handle_onboarding(from_number, text_body)
+        for txt in messages["texts"]:
+            send_whatsapp_text(from_number, txt)
+        for media in messages["medias"]:
+            send_whatsapp_media(from_number, media["url"], media["type"])
+
         return HttpResponse(status=200)
 
     # ✅ Check session first
@@ -311,7 +312,7 @@ def whatsapp_webhook_meta(request):
     if action in COMMANDS:
         from twilio.twiml.messaging_response import MessagingResponse
         resp = MessagingResponse()
-        resp = COMMANDS[action](broker, intent, resp, msg=text_body)
+        resp = COMMANDS[action](broker, intent, msg=text_body)
         # for m in resp.messages:
         #     if m.body:
         #         send_whatsapp_text(from_number, m.body)

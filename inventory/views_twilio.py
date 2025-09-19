@@ -22,13 +22,70 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
 
-def handle_onboarding(phone, msg, resp):
+# def handle_onboarding(phone, msg, resp):
+#     session = get_session(phone)
+
+#     if not session:
+#         set_session(phone, {"mode": "onboarding", "step": "ask_name"})
+#         resp.message("Welcome to KeyMate!\n Let's get you onboarded.\n\nPlease tell me your *full name*.")
+#         return resp
+    
+#     step = session.get("step")
+
+#     if step == "ask_name":
+#         session["name"] = msg.strip()
+#         session["step"] = "ask_mail"
+#         set_session(phone, session)
+#         resp.message(f"Thanks {msg}! \nNow tell me your e-mail (or type 'skip' if none).")
+#         return resp
+    
+#     elif step == "ask_mail":
+#         mail = None if msg.lower() == 'skip' else msg.strip()
+
+#         broker = Broker.objects.create(
+#             name = session["name"],
+#             phone_number = phone,
+#             email = mail
+#         )
+
+#         clear_session(phone)
+
+#         resp.message(
+#             f"✅ You’re registered, {broker.name}!\n\n"
+#             f"Here’s how to use KeyMate:\n"
+#             f"1️⃣ Send me a property description → I’ll extract details.\n"
+#             f"2️⃣ Upload images/videos → type 'done' when finished.\n"
+#             f"3️⃣ I’ll create a draft property for you.\n"
+#             f"4️⃣ Use commands:\n"
+#             f"   • 'list' → see all your properties\n"
+#             f"   • 'disable <id>' → hide the property from user\n"
+#             f"   • 'delete <id>' → delete the property\n"
+#             f"   • 'edit <id>' → edit property details\n"
+#             f"   • 'share <id>' → sharing message\n"
+#             f"   • 'profile' → view your broker profile\n"
+#             f"   • 'editprofile' → edit your broker profile\n"
+#             f"   • 'help' → guide incase you stuck somewhere\n"
+#         )
+#         return resp
+    
+#     return resp
+
+# services/handlers_meta.py
+
+from inventory.services.redis_setup import set_session, get_session, clear_session
+from .models import Broker
+
+def handle_onboarding(phone, msg):
     session = get_session(phone)
+
+    responses = {"texts": [], "medias": []}
 
     if not session:
         set_session(phone, {"mode": "onboarding", "step": "ask_name"})
-        resp.message("Welcome to KeyMate!\n Let's get you onboarded.\n\nPlease tell me your *full name*.")
-        return resp
+        responses["texts"].append(
+            "Welcome to KeyMate!\nLet's get you onboarded.\n\nPlease tell me your *full name*."
+        )
+        return responses
     
     step = session.get("step")
 
@@ -36,39 +93,29 @@ def handle_onboarding(phone, msg, resp):
         session["name"] = msg.strip()
         session["step"] = "ask_mail"
         set_session(phone, session)
-        resp.message(f"Thanks {msg}! \nNow tell me your e-mail (or type 'skip' if none).")
-        return resp
-    
+        responses["texts"].append(f"Thanks {msg}! Now tell me your e-mail (or type 'skip' if none).")
+        return responses
+
     elif step == "ask_mail":
-        mail = None if msg.lower() == 'skip' else msg.strip()
-
+        mail = None if msg.lower() == "skip" else msg.strip()
         broker = Broker.objects.create(
-            name = session["name"],
-            phone_number = phone,
-            email = mail
+            name=session["name"],
+            phone_number=phone,
+            email=mail,
         )
-
         clear_session(phone)
-
-        resp.message(
+        responses["texts"].append(
             f"✅ You’re registered, {broker.name}!\n\n"
             f"Here’s how to use KeyMate:\n"
             f"1️⃣ Send me a property description → I’ll extract details.\n"
             f"2️⃣ Upload images/videos → type 'done' when finished.\n"
             f"3️⃣ I’ll create a draft property for you.\n"
-            f"4️⃣ Use commands:\n"
-            f"   • 'list' → see all your properties\n"
-            f"   • 'disable <id>' → hide the property from user\n"
-            f"   • 'delete <id>' → delete the property\n"
-            f"   • 'edit <id>' → edit property details\n"
-            f"   • 'share <id>' → sharing message\n"
-            f"   • 'profile' → view your broker profile\n"
-            f"   • 'editprofile' → edit your broker profile\n"
-            f"   • 'help' → guide incase you stuck somewhere\n"
+            f"4️⃣ Use commands like 'list', 'edit', 'share', 'help'."
         )
-        return resp
-    
-    return resp
+        return responses
+
+    return responses
+
 
 def handle_profile(broker, intent, resp, msg=None):
     lines = [f"👤 *Your Profile*",
@@ -125,12 +172,72 @@ def handle_edit_broker_session(broker, msg, resp, session):
     
 
 
-def handle_new_property(broker, intent, resp, msg=None):
-    desc = msg.strip()
+# def handle_new_property(broker, intent, resp, msg=None):
+#     desc = msg.strip()
 
+#     if not desc:
+#         resp.message("⚠️ Please provide a property description to add a new property.")
+#         return resp
+#     prop = extract(broker, description=desc)
+#     prop.status = "active"
+#     prop.save()
+
+#     session = {
+#         "mode": "new_property",
+#         "property_id": prop.property_id,
+#         "step": "awaiting_media",
+#         "description": desc,
+#         "media": []
+#     }
+#     set_session(broker.id, session)
+#     lines = [
+#         f"✅ New Property created: [{prop.property_id}] {prop.title or 'Property'}",
+#         "",
+#         f"[{prop.property_id}] {prop.title or ''}",
+#     ]
+
+#     if prop.bhk and prop.city and prop.sale_or_rent:
+#         lines.append(f" {prop.bhk} BHK in {prop.city} for {prop.sale_or_rent}")
+#     elif prop.city and prop.sale_or_rent:
+#         lines.append(f" {prop.city} for {prop.sale_or_rent}")
+#     elif prop.city:
+#         lines.append(f" {prop.city}")
+
+#     if prop.area_sqft:
+#         lines.append(f" {prop.area_sqft} sqft")
+#     if prop.furnishing:
+#         lines.append(f" {prop.furnishing}")
+#     if prop.price:
+#         lines.append(f" {prop.price} {prop.currency or ''}")
+#     if prop.locality:
+#         lines.append(f" near {prop.locality}")
+#     if prop.status:
+#         lines.append(f" Status: {prop.status.title()}")
+
+#     reply_text = "\n".join(lines)
+
+#     reply_text += (
+#         "\n\n👉 Reply 'list' to see all your properties"
+#         f"\n👉 Reply 'edit {prop.property_id}' to edit this property"
+#         f"\n👉 Reply 'share {prop.property_id}' to share the property"
+#         f"\n👉 Reply 'delete {prop.property_id}' to remove the property"
+#         f"\n👉 Reply 'help' for command guide"
+#         "\n\n📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
+#     )
+
+#     resp.message(reply_text)
+#     return resp
+# services/response_builder.py
+def make_response():
+    return {"texts": [], "medias": []}
+
+def handle_new_property(broker, intent=None, msg=None):
+    resp = make_response()
+    desc = msg.strip()
     if not desc:
-        resp.message("⚠️ Please provide a property description to add a new property.")
+        resp["texts"].append("⚠️ Please provide a property description.")
         return resp
+
     prop = extract(broker, description=desc)
     prop.status = "active"
     prop.save()
@@ -143,42 +250,11 @@ def handle_new_property(broker, intent, resp, msg=None):
         "media": []
     }
     set_session(broker.id, session)
-    lines = [
-        f"✅ New Property created: [{prop.property_id}] {prop.title or 'Property'}",
-        "",
-        f"[{prop.property_id}] {prop.title or ''}",
-    ]
 
-    if prop.bhk and prop.city and prop.sale_or_rent:
-        lines.append(f" {prop.bhk} BHK in {prop.city} for {prop.sale_or_rent}")
-    elif prop.city and prop.sale_or_rent:
-        lines.append(f" {prop.city} for {prop.sale_or_rent}")
-    elif prop.city:
-        lines.append(f" {prop.city}")
-
-    if prop.area_sqft:
-        lines.append(f" {prop.area_sqft} sqft")
-    if prop.furnishing:
-        lines.append(f" {prop.furnishing}")
-    if prop.price:
-        lines.append(f" {prop.price} {prop.currency or ''}")
-    if prop.locality:
-        lines.append(f" near {prop.locality}")
-    if prop.status:
-        lines.append(f" Status: {prop.status.title()}")
-
-    reply_text = "\n".join(lines)
-
-    reply_text += (
-        "\n\n👉 Reply 'list' to see all your properties"
-        f"\n👉 Reply 'edit {prop.property_id}' to edit this property"
-        f"\n👉 Reply 'share {prop.property_id}' to share the property"
-        f"\n👉 Reply 'delete {prop.property_id}' to remove the property"
-        f"\n👉 Reply 'help' for command guide"
-        "\n\n📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
+    resp["texts"].append(
+        f"✅ Property created: [{prop.property_id}] {prop.title or 'Property'}\n\n"
+        "📸 Now upload images/videos. Type *done* when finished, or *skip* if none."
     )
-
-    resp.message(reply_text)
     return resp
 
 def handle_help(broker, intent, resp, msg=None):
