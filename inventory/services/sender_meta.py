@@ -16,6 +16,8 @@ def send_whatsapp_text(to, text):
         "text": {"body": text}
     }
     requests.post(url, headers=headers, json=data)
+    r = requests.post(url, headers=headers, json=data)
+    logging.info(f"Meta send text -> {to} | status {r.status_code} | resp {r.text}")
 
 def send_whatsapp_media(to, media_url, media_type="image"):
     url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
