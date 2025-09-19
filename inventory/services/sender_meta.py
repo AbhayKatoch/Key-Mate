@@ -10,9 +10,10 @@ def send_whatsapp_text(to, text):
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
     }
-    data = {
+    payload = {
         "messaging_product": "whatsapp",
         "to": to,
+        "type": "text",
         "text": {"body": text}
     }
     try:
