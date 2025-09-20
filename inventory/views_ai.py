@@ -126,8 +126,12 @@ def whatsaap_webhook(request):
 
         # 🔹 Edit broker profile flow
         elif mode == "edit_broker":
-            resp = handle_edit_broker_session(broker, msg, resp, session)
-            return HttpResponse(str(resp), content_type="application/xml")
+            resp = handle_edit_broker_session(broker, msg, session)
+            for txt in resp.get("texts", []):
+                send_whatsapp_text(phone, txt)
+            for media in resp.get("medias", []):
+                send_whatsapp_media(phone, media["url"], media["type"])
+            return HttpResponse("Edit broker session handled", status=200)
 
     # ✅ No session → use AI intent classification
     try:
