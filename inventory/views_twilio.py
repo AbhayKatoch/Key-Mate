@@ -202,12 +202,12 @@ def handle_edit_broker_session(broker, msg, session):
 
     if step == "choose_field":
         field_map = {"1": "name", "2": "email"}
-        if msg not in field_map:
+        msg_clean = msg.strip()
+        if msg_clean not in field_map:
             resp["texts"].append("⚠️ Invalid choice. Reply with 1 or 2.")
             return resp
-
         session["step"] = "awaiting_value"
-        session["field"] = field_map[msg]
+        session["field"] = field_map[msg_clean]
         set_session(broker.id, session)
         resp["texts"].append(f"✏️ Send me the new {session['field']}.")
         return resp
@@ -215,14 +215,18 @@ def handle_edit_broker_session(broker, msg, session):
     elif step == "awaiting_value":
         field = session.get("field")
         new_value = msg.strip()
-
-        setattr(broker, field, new_value)
-        broker.save()
-
-        clear_session(broker.id)
-        resp["texts"].append(f"✅ Updated {field} to: {new_value}")
+        if field in ["name", "email"]:
+            setattr(broker, field, new_value)
+            broker.save()
+            clear_session(broker.id)
+            resp["texts"].append(f"✅ Updated {field} to: {new_value}")
+        else:
+            resp["texts"].append("⚠️ Invalid field.")
         return resp
-    return resp
+    else:
+        resp["texts"].append("⚠️ Invalid session state. Please restart profile edit.")
+        clear_session(broker.id)
+        return resp
     
 
 
@@ -446,22 +450,25 @@ def handle_list(broker, intent, msg=None):
     page = int(filters.get("page", 1))
     qs = Property.objects.filter(broker=broker).order_by("-created_at")
 
-    # City filter
     if "city" in filters:
         qs = qs.filter(city__iexact=filters["city"])
-    # Location filter
     if "location" in filters:
         qs = qs.filter(locality__icontains=filters["location"])
-    # Status filter
     if "status" in filters:
         qs = qs.filter(status__iexact=filters["status"])
-    # BHK filter
+    if "furnishing" in filters:
+        furnishing_val = filters["furnishing"].strip().lower()
+        if furnishing_val in ["fully-furnished", "fully furnished"]:
+            qs = qs.filter(furnishing__iexact="fully-furnished")
+        elif furnishing_val in ["semi-furnished", "semi furnished"]:
+            qs = qs.filter(furnishing__iexact="semi-furnished")
+        elif furnishing_val in ["not furnished", "unfurnished", "not-furnished"]:
+            qs = qs.filter(furnishing__iexact="not furnished")
     if "bhk" in filters:
         try:
             qs = qs.filter(bhk=int(filters["bhk"]))
         except ValueError:
             pass
-    # Price range filter
     if "price_min" in filters:
         try:
             qs = qs.filter(price__gte=float(filters["price_min"]))
@@ -472,7 +479,6 @@ def handle_list(broker, intent, msg=None):
             qs = qs.filter(price__lte=float(filters["price_max"]))
         except ValueError:
             pass
-    # Deposit range filter
     if "deposit_min" in filters:
         try:
             qs = qs.filter(deposit__gte=float(filters["deposit_min"]))
@@ -495,7 +501,7 @@ def handle_list(broker, intent, msg=None):
 
     lines = []
     for p in props:
-        line = f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.locality or ''} | {p.status} | {p.bhk or ''} BHK | ₹{p.price or ''} | Deposit: ₹{p.deposit or ''}"
+        line = f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.status}"
         lines.append(line)
 
     total_pages = (qs.count() + page_size - 1) // page_size
