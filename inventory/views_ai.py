@@ -145,6 +145,7 @@ def whatsaap_webhook(request):
 
     return HttpResponse(str(resp), content_type="application/xml")
 
+
 import os
 VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN")
 from xml.etree import ElementTree
@@ -165,8 +166,12 @@ def get_texts_from_resp(resp):
         pass
     return texts
 
+
+def make_response():
+    return {"texts": [], "medias": []}
+
 @csrf_exempt
-def whatsapp_webhook_meta(request):
+def whatsapp_webhook_not_meta(request):
     """
     This replicates the broker Twilio webhook but for Meta Cloud API.
     """
@@ -310,8 +315,7 @@ def whatsapp_webhook_meta(request):
 
     action = intent.action
     if action in COMMANDS:
-        from twilio.twiml.messaging_response import MessagingResponse
-        resp = MessagingResponse()
+        resp = make_response()
         resp = COMMANDS[action](broker, intent, msg=text_body)
         # for m in resp.messages:
         #     if m.body:
@@ -325,4 +329,123 @@ def whatsapp_webhook_meta(request):
         send_whatsapp_text(from_number, "⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
 
     return HttpResponse(status=200)
+
+
+
+
+@csrf_exempt
+def whatsapp_webhook_meta(request):
+    if request.method != "POST":
+        return HttpResponse("Invalid request", status=400)
     
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return HttpResponse("Invalid JSON", status=400)
+    
+    entry = body.get("entry", [])[0]
+    changes = entry.get("changes", [])[0]
+    value = changes.get("value",{})
+    messages = value.get("messages",[])
+
+    if not messages:
+        return HttpResponse("No messages", status=200)
+    
+    msg_obj = messages[0]
+    msg = msg_obj.get("text", {}).get("body","").strip()
+    phone = msg_obj.get("from")
+
+    try:
+        broker = Broker.objects.get(phone_number=phone)
+    except Broker.DoesNotExist:
+        handle_onboarding(phone, msg)
+        return HttpResponse("Onboarding sent", status=200)
+    
+    session = get_session(broker.id)
+    if session:
+        mode = session.get("mode")
+
+        if mode == "edit":
+            property_id = session.get("property_id")
+            step = session.get("step")
+
+            if not property_id:
+                clear_session(broker.id)
+                send_whatsapp_text(phone, "⚠️ Edit session ended. Please restart with 'edit <property_id>'.")
+                return HttpResponse("Session cleared", status=200)
+
+            try:
+                prop = Property.objects.get(broker=broker, property_id=property_id)
+            except Property.DoesNotExist:
+                clear_session(broker.id)
+                send_whatsapp_text(phone, "⚠️ Property not found. Edit session cleared.")
+                return HttpResponse("Property not found", status=200)
+
+            if step == "choose_field":
+                if msg not in EDIT_FIELDS_MAP:
+                    send_whatsapp_text(phone, "⚠️ Invalid choice. Reply with 1-5.")
+                    return HttpResponse("Invalid choice", status=200)
+
+                field = EDIT_FIELDS_MAP[msg]
+                session["step"] = "awaiting_value"
+                session["field"] = field
+                set_session(broker.id, session)
+
+                send_whatsapp_text(phone, f"✏️ Send me the new {field}.")
+                return HttpResponse("Awaiting value", status=200)
+
+            elif step == "awaiting_value":
+                field = session.get("field")
+                new_value = msg.strip()
+
+                if field in ["price", "bhk"]:
+                    try:
+                        new_value = int(new_value)
+                    except ValueError:
+                        send_whatsapp_text(phone, "⚠️ Please enter a valid number.")
+                        return HttpResponse("Invalid number", status=200)
+
+                elif field == "status":
+                    if new_value not in ["active", "disabled", "disable"]:
+                        send_whatsapp_text(phone, "⚠️ Invalid status. Use 'active' or 'disable'.")
+                        return HttpResponse("Invalid status", status=200)
+                    if new_value == "disable":
+                        new_value = "disabled"
+
+                setattr(prop, field, new_value)
+                prop.save()
+
+                clear_session(broker.id)
+                send_whatsapp_text(phone, f"✅ Updated {field} for {prop.property_id} | {prop.title} to {new_value}.")
+                return HttpResponse("Property updated", status=200)
+        elif mode == "new_property":
+            if msg.lower() in ["done", "skip"]:
+                handle_done(broker)
+                return HttpResponse("Done handled", status=200)
+
+            num_media = int(msg_obj.get("image", {}).get("num_media", 0))
+            if num_media > 0:
+                handle_media(broker, msg_obj)
+                return HttpResponse("Media handled", status=200) 
+        elif mode == "edit_broker":
+            handle_edit_broker_session(broker, msg, phone, session)
+            return HttpResponse("Edit broker session handled", status=200)
+        
+    try:
+        intent = classify_intent(msg)
+    except Exception:
+        send_whatsapp_text(phone, "⚠️ Sorry, I couldn’t understand. Type 'help' for commands.")
+        return HttpResponse(status =200)
+
+    action = intent.action
+    if action in COMMANDS:
+        handler = COMMANDS[action]
+        resp = handler(broker, intent, msg=msg)
+        for txt in resp.get("texts", []):
+            send_whatsapp_text(phone, txt)
+        for media in resp.get("medias", []):
+            send_whatsapp_media(phone, media["url"], media["type"])
+    else:
+        send_whatsapp_text(phone, "⚠️ Sorry, I didn’t understand. Type 'help' for guidance.")
+
+    return HttpResponse(status=200)
