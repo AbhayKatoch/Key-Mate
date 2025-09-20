@@ -428,7 +428,7 @@ def whatsapp_webhook_meta(request):
                 handle_media(broker, msg_obj)
                 return HttpResponse("Media handled", status=200) 
         elif mode == "edit_broker":
-            handle_edit_broker_session(broker, msg, phone, session)
+            handle_edit_broker_session(broker, msg, session)
             return HttpResponse("Edit broker session handled", status=200)
         
     try:
