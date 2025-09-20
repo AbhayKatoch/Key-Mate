@@ -37,18 +37,22 @@ prompt = PromptTemplate(
         User message: {user_msg}\n\n
         Decide what the user wants.
         Possible actions:\n
-        - list_properties (with optional filters like city, price, status of the property)\n
-        - view_property (requires property_id)\n
-        - share_property (requires property_id)\n
-        - share_all_to_client (requires filters + client_number)\n
-        - edit_property (requires property_id)\n
-        - delete_property (requires property_id)\n
-        - activate_property (requires property_id)\n
-        - disable_property (requires property_id)\n
-        - profile\n
-        - editprofile\n
-        - boturl\n
-        - help\n\n
+        - list_properties (with optional filters like city, price, status of the property, and paging)
+        - view_property (requires property_id)
+        - share_property (requires property_id)
+        - share_all_to_client (requires filters + client_number)
+        - edit_property (requires property_id)
+        - delete_property (requires property_id)
+        - activate_property (requires property_id)
+        - disable_property (requires property_id)
+        - profile
+        - editprofile
+        - boturl
+        - help
+
+        Paging instructions:
+        If the user message is like 'list 2', 'list 3', etc., extract the page number (e.g., 2, 3) and set it as filters["page"].
+        For example, 'list 2' means page 2, 'list 3' means page 3, etc.
 
         If the message looks like a property description (location, rent, status, deposit, bhk, etc.),
         then classify as 'new_property'.
