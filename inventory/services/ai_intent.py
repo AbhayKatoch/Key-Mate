@@ -16,7 +16,7 @@ class UserIntent(BaseModel):
     )
     filters: Optional[Dict] = Field(
         default_factory=dict,
-        description="Search filters when listing properties, such as {'city': 'Pune', 'price': '<=5000000'}."
+        description="Search filters when listing properties like city, price, deposit, status, e.t.c, such as {'city': 'Pune', 'price': '<=5000000'}."
     )
     client_number: Optional[str] = Field(
         None,
@@ -37,7 +37,7 @@ prompt = PromptTemplate(
         User message: {user_msg}\n\n
         Decide what the user wants.
         Possible actions:\n
-        - list_properties (with optional filters like city, price)\n
+        - list_properties (with optional filters like city, price, status of the property)\n
         - view_property (requires property_id)\n
         - share_property (requires property_id)\n
         - share_all_to_client (requires filters + client_number)\n
@@ -50,7 +50,7 @@ prompt = PromptTemplate(
         - boturl\n
         - help\n\n
 
-        If the message looks like a property description (location, rent, deposit, bhk, etc.),
+        If the message looks like a property description (location, rent, status, deposit, bhk, etc.),
         then classify as 'new_property'.
         If the broker message includes 'to +91...' treat it as share_all_to_client and extract client_number.
         Output in JSON following this schema:\n{format_instructions}
