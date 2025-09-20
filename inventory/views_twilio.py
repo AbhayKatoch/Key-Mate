@@ -925,7 +925,8 @@ def handle_view(broker, intent, msg=None):
 
 
 #whatsapp sharing
-def handle_share(broker, intent, resp, msg = None):
+def handle_share(broker, intent, msg = None):
+    resp = make_response()
     # parts = msg.split()
     # if len(parts) <2 :
     #     resp.message("⚠️ Please provide a property ID. Example: share 123")
@@ -935,38 +936,44 @@ def handle_share(broker, intent, resp, msg = None):
 
     property_id = intent.property_id
     if not property_id:
-        resp.message("⚠️ Please specify a property to share. Example: 'share 123'")
+        resp["text"].append("⚠️ Please specify a property to share. Example: 'share 123'")
         return resp
 
     try:
         prop = Property.objects.get(broker= broker, property_id = property_id)
     except Property.DoesNotExist:
-        resp.message("❌ Property Not Found.")
+        resp["text"].append("❌ Property Not Found.")
         return resp
     
     generated_text = generate_property_message(prop, broker)
 
+    # media_assets = MediaAsset.objects.filter(property=prop)
+
+    # msg_with_media = resp["text"].append(generated_text)
+    # for media in media_assets:
+    #     if media.media_type == "image":
+    #         msg_with_media = resp["text"].append("📸 Property Image")
+    #         msg_with_media.media(media.storage_url)
+    #     elif media.media_type == "video":
+    #         msg_with_media = resp["text"].append("🎥 Property Video")
+    #         msg_with_media.media(media.storage_url)
+
+
+    # return resp
+    resp["texts"].append(generated_text)
     media_assets = MediaAsset.objects.filter(property=prop)
-
-    msg_with_media = resp.message(generated_text)
     for media in media_assets:
-        if media.media_type == "image":
-            msg_with_media = resp.message("📸 Property Image")
-            msg_with_media.media(media.storage_url)
-        elif media.media_type == "video":
-            msg_with_media = resp.message("🎥 Property Video")
-            msg_with_media.media(media.storage_url)
-
-
+        resp["medias"].append({"url": media.storage_url, "type": media.media_type})
     return resp
 
 import re
-def handle_share_all_to_client(broker, intent, resp, msg=None):
+def handle_share_all_to_client(broker, intent, msg=None):
+    resp = make_response()
     client_number = intent.client_number
     filters = intent.filters or {}
 
     if not client_number:
-        resp.message("⚠️ Please specify a customer number. Example:\nshare all 2BHK in Pune to +919876543210")
+        resp["texts"].append("⚠️ Please specify a customer number. Example:\nshare all 2BHK in Pune to +919876543210")
         return resp
 
     qs = Property.objects.filter(broker=broker, status="active").order_by("-created_at")
@@ -993,25 +1000,29 @@ def handle_share_all_to_client(broker, intent, resp, msg=None):
                 qs = qs.filter(price__lte=val)
 
     if not qs.exists():
-        resp.message("⚠️ No matching properties found.")
+        resp["texts"].append("⚠️ No matching properties found.")
         return resp
 
     sent_props = []
     for prop in qs[:5]:  # send up to 5
         text_msg = generate_property_message(prop, broker)
-        client.messages.create(
-            from_=f"whatsapp:+14155238886",
-            to=f"whatsapp:{client_number}",
-            body=text_msg
-        )
+        # client.messages.create(
+        #     from_=f"whatsapp:+14155238886",
+        #     to=f"whatsapp:{client_number}",
+        #     body=text_msg
+        # )
 
+        # for media in prop.media.all():
+        #     client.messages.create(
+        #         from_=f"whatsapp:+14155238886",
+        #         to=f"whatsapp:{client_number}",
+        #         body="📸 Property Media" if media.media_type == "image" else "🎥 Property Video",
+        #         media_url=[media.storage_url]
+        #     )
+        send_whatsapp_text(client_number, text_msg)
         for media in prop.media.all():
-            client.messages.create(
-                from_=f"whatsapp:+14155238886",
-                to=f"whatsapp:{client_number}",
-                body="📸 Property Media" if media.media_type == "image" else "🎥 Property Video",
-                media_url=[media.storage_url]
-            )
+            send_whatsapp_media(client_number, media.storage_url, media.media_type)
+        sent_props.append(prop.property_id)
 
         sent_props.append(prop.property_id)
 
@@ -1022,13 +1033,14 @@ def handle_share_all_to_client(broker, intent, resp, msg=None):
     #     response={"properties": sent_props, "sent_to": client_number}
     # )
 
-    resp.message(f"✅ Shared {len(sent_props)} property(s) with {client_number}")
+    resp["texts"].append(f"✅ Shared {len(sent_props)} property(s) with {client_number}")
     return resp
 
 
-def handle_bot_url(broker, intent, resp, msg= None):
+def handle_bot_url(broker, intent, msg= None):
+    resp = make_response()
     link = broker.whatsapp_link
-    resp.message(
+    resp["texts"].append(
         f"🔗 *Your WhatsApp Bot Link*\n\n"
         f"Send this link to your clients to chat directly with your bot:\n\n"
         f"{link}\n\n"
