@@ -923,6 +923,7 @@ def handle_view(broker, intent, msg=None):
     return resp
 
 
+from .services.sender_meta import send_whatsapp_text, send_whatsapp_media
 
 #whatsapp sharing
 def handle_share(broker, intent, msg = None):

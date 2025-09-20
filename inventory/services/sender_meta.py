@@ -24,16 +24,24 @@ def send_whatsapp_text(to, text):
     except Exception as e:
         logging.exception("Failed to send whatsapp text via Meta")
         return None
-    
+
 def send_whatsapp_media(to, media_url, media_type="image"):
     url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
     }
-    data = {
+    payload = {
         "messaging_product": "whatsapp",
         "to": to,
+        "type": media_type,
         media_type: {"link": media_url}
     }
-    requests.post(url, headers=headers, json=data)
+    try:
+        r = requests.post(url, headers=headers, json=payload, timeout=10)
+        logging.info(f"Meta send media -> {to} | status {r.status_code} | resp {r.text}")
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        logging.exception("Failed to send whatsapp media via Meta")
+        return None
