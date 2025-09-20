@@ -442,41 +442,71 @@ def handle_list(broker, intent, msg=None):
     # parts = msg.split()
     # page = int(parts[1]) if len(parts) > 1 else 1
     resp = make_response()
-
-    page = intent.filters.get("page", 1) if intent.filters else 1
-    city = intent.filters.get("city") if intent.filters else None
-
+    filters = intent.filters if intent and intent.filters else {}
+    page = int(filters.get("page", 1))
     qs = Property.objects.filter(broker=broker).order_by("-created_at")
-    if city:
-        qs = qs.filter(city__iexact=city)
+
+    # City filter
+    if "city" in filters:
+        qs = qs.filter(city__iexact=filters["city"])
+    # Location filter
+    if "location" in filters:
+        qs = qs.filter(locality__icontains=filters["location"])
+    # Status filter
+    if "status" in filters:
+        qs = qs.filter(status__iexact=filters["status"])
+    # BHK filter
+    if "bhk" in filters:
+        try:
+            qs = qs.filter(bhk=int(filters["bhk"]))
+        except ValueError:
+            pass
+    # Price range filter
+    if "price_min" in filters:
+        try:
+            qs = qs.filter(price__gte=float(filters["price_min"]))
+        except ValueError:
+            pass
+    if "price_max" in filters:
+        try:
+            qs = qs.filter(price__lte=float(filters["price_max"]))
+        except ValueError:
+            pass
+    # Deposit range filter
+    if "deposit_min" in filters:
+        try:
+            qs = qs.filter(deposit__gte=float(filters["deposit_min"]))
+        except ValueError:
+            pass
+    if "deposit_max" in filters:
+        try:
+            qs = qs.filter(deposit__lte=float(filters["deposit_max"]))
+        except ValueError:
+            pass
 
     if not qs.exists():
         resp["texts"].append("⚠️ No properties found.")
         return resp
+
     page_size = 10
     start = (page - 1) * page_size
     end = start + page_size
     props = qs[start:end]
-    properties = Property.objects.filter(broker = broker).order_by("-created_at")
-    if not properties:
-        resp["texts"].append("You don't have any properties yet.")
-        return resp
-    
+
     lines = []
     for p in props:
-        lines.append(f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.status}")
+        line = f"[{p.property_id}] | {p.title} | {p.city or ''} | {p.locality or ''} | {p.status} | {p.bhk or ''} BHK | ₹{p.price or ''} | Deposit: ₹{p.deposit or ''}"
+        lines.append(line)
 
-    total_pages = (qs.count() + page_size -1) // page_size
-
+    total_pages = (qs.count() + page_size - 1) // page_size
     reply_text = (
         f"📋 Your properties (Page {page}/{total_pages}):\n\n" +
-                "\n".join(lines) 
-        )
+        "\n".join(lines)
+    )
     if page < total_pages:
         reply_text += f"\n\n👉 Reply 'list {page+1}' for next page"
 
     resp["texts"].append(reply_text)
-
     return resp
 
 
