@@ -406,11 +406,13 @@ def whatsapp_webhook_meta(request):
                         return HttpResponse("Invalid number", status=200)
 
                 elif field == "status":
-                    if new_value not in ["active", "disabled", "disable"]:
+                    if new_value.lower() not in ["active", "disabled", "disable"]:
                         send_whatsapp_text(phone, "⚠️ Invalid status. Use 'active' or 'disable'.")
                         return HttpResponse("Invalid status", status=200)
-                    if new_value == "disable":
+                    if new_value.lower() == "disable":
                         new_value = "disabled"
+                    if new_value.lower() == "active":
+                        new_value = "active"
 
                 setattr(prop, field, new_value)
                 prop.save()
