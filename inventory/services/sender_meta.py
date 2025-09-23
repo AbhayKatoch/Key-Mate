@@ -5,7 +5,7 @@ META_TOKEN = os.getenv("META_TOKEN")  # from Facebook developer app
 PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID")  # your WABA ID
 import logging
 def send_whatsapp_text(to, text):
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
@@ -26,7 +26,7 @@ def send_whatsapp_text(to, text):
         return None
 
 def send_whatsapp_media(to, media_url, media_type="image"):
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
