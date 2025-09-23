@@ -335,6 +335,13 @@ def whatsapp_webhook_not_meta(request):
 
 @csrf_exempt
 def whatsapp_webhook_meta(request):
+    if request.method == "GET":
+        mode = request.GET.get("hub.mode")
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return HttpResponse(challenge)
+        return HttpResponse(status=403)
     if request.method != "POST":
         return HttpResponse("Invalid request", status=400)
     
