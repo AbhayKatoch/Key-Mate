@@ -332,9 +332,10 @@ def whatsapp_webhook_not_meta(request):
 
 
 
-
+import logging
 @csrf_exempt
 def whatsapp_webhook_meta(request):
+    logging.info(f"Webhook called: {request.method} {request.path}")
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
         token = request.GET.get("hub.verify_token")
