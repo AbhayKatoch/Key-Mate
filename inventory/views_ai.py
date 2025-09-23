@@ -425,10 +425,15 @@ def whatsapp_webhook_meta(request):
                 handle_done(broker)
                 return HttpResponse("Done handled", status=200)
 
-            num_media = int(msg_obj.get("image", {}).get("num_media", 0))
+            num_media = len(msg_obj.get("image", [])) + len(msg_obj.get("video", []))
             if num_media > 0:
-                handle_media(broker, msg_obj)
-                return HttpResponse("Media handled", status=200) 
+                resp = handle_media(broker, msg_obj)
+                for txt in resp.get("texts", []):
+                    send_whatsapp_text(phone, txt)
+                for media in resp.get("medias", []):
+                    send_whatsapp_media(phone, media["url"], media["type"])
+                return HttpResponse("Media handled", status=200)
+             
         elif mode == "edit_broker":
             resp = handle_edit_broker_session(broker, msg, session)
             for txt in resp.get("texts", []):

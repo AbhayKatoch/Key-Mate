@@ -703,7 +703,7 @@ def fetch_and_store_media(media_url, broker_id, index, ext="jpg"):
 #     resp.message(f"📥 Added {added} file(s). Upload more or type *done* when finished.")
 #     return resp
 
-def handle_media(broker, data):
+def handle_media(broker, msg_obj):
     resp = make_response()
     session = get_session(broker.id)
     if not session or session.get("mode") != "new_property":
@@ -716,9 +716,8 @@ def handle_media(broker, data):
         resp["texts"].append("⚠️ Property not found.")
         clear_session(broker.id)
         return resp
-    # Adapt for Meta: expects media URLs in msg_obj
-    images = data.get("image", [])
-    videos = data.get("video", [])
+    images = msg_obj.get("image", [])
+    videos = msg_obj.get("video", [])
     added = 0
     for i, img in enumerate(images):
         url = img.get("url")
