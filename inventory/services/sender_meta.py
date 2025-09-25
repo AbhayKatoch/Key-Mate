@@ -38,8 +38,9 @@ def send_whatsapp_media(to, media_url, media_type="image"):
         media_type: {"link": media_url}
     }
     try:
+        logging.info(f"Sending media: {payload}")
         r = requests.post(url, headers=headers, json=payload, timeout=10)
-        logging.info(f"Meta send media -> {to} | status {r.status_code} | resp {r.text}")
+        logging.info(f"Meta response: {r.text}")
         r.raise_for_status()
         return r.json()
     except Exception as e:
