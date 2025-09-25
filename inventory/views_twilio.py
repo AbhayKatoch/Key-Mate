@@ -293,6 +293,19 @@ def handle_new_property(broker, intent=None, msg=None):
     if not desc:
         resp["texts"].append("⚠️ Please provide a property description.")
         return resp
+    
+    session = get_session(broker.id)
+    if session and session.get("mode") == "new_property":
+        prop_id = session.get("property_id")
+        try:
+            prop = Property.objects.get(broker=broker, property_id=prop_id)
+            resp["texts"].append(
+                f"⚠️ You already started property [{prop.property_id}] {prop.title or 'Property'}.\n"
+                f"📸 Upload images/videos or type *done* when finished."
+            )
+            return resp
+        except Property.DoesNotExist:
+            clear_session(broker.id)
 
     prop = extract(broker, description=desc)
     prop.status = "active"

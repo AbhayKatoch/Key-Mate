@@ -172,6 +172,22 @@ def make_response():
 
 
 
+from inventory.services.redis_setup import get_session, set_session
+
+def is_duplicate_message(msg_id: str) -> bool:
+    """
+    Check if a WhatsApp message ID was already processed.
+    Uses Redis to mark processed IDs.
+    """
+    if not msg_id:
+        return False
+
+    key = f"msg_processed:{msg_id}"
+    if get_session(key):
+        return True  # already handled
+    # store with short TTL (e.g. 1 day)
+    set_session(key, True, ttl=3600)
+    return False
 
 import logging
 @csrf_exempt
@@ -201,8 +217,13 @@ def whatsapp_webhook_meta(request):
         return HttpResponse("No messages", status=200)
     
     msg_obj = messages[0]
+    msg_id = msg_obj.get("id")
     msg = msg_obj.get("text", {}).get("body","").strip()
     phone = msg_obj.get("from")
+
+    if msg_id and is_duplicate_message(msg_id):
+        logging.info(f"Duplicate message {msg_id} from {phone}, ignoring.")
+        return HttpResponse("Duplicate message", status=200)
 
     try:
         broker = Broker.objects.get(phone_number=phone)
