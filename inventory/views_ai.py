@@ -15,9 +15,6 @@ from .views_twilio import (
 )
 from .services.sender_meta import send_whatsapp_text, send_whatsapp_media
 import json
-from dotenv import load_dotenv
-import logging
-load_dotenv()
 
 COMMANDS = {
     "new_property": handle_new_property,
