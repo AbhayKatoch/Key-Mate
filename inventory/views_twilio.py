@@ -703,6 +703,17 @@ def fetch_and_store_media(media_url, broker_id, index, ext="jpg"):
 #     resp.message(f"📥 Added {added} file(s). Upload more or type *done* when finished.")
 #     return resp
 
+import requests
+from .services.sender_meta import META_TOKEN
+import cloudinary.uploader
+
+def get_media_url(media_id: str)-> str:
+    url = f"https://graph.facebook.com/v18.0/{media_id}"
+    headers = {"Authorization": f"Bearer {META_TOKEN}"}
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    return resp.json().get("url")
+
 def handle_media(broker, msg_obj):
     resp = make_response()
     session = get_session(broker.id)
@@ -716,39 +727,65 @@ def handle_media(broker, msg_obj):
         resp["texts"].append("⚠️ Property not found.")
         clear_session(broker.id)
         return resp
-    images = msg_obj.get("image", [])
-    videos = msg_obj.get("video", [])
+    
     added = 0
-    for i, img in enumerate(images):
-        if isinstance(img, dict):
-            url = img.get("url")
-        else:
-            url = img
-        if url:
-            MediaAsset.objects.create(
-                property=prop,
-                media_type="image",
-                storage_url=url,
-                order=i
-            )
-            resp["medias"].append({"url": url, "type": "image"})
-            added += 1
-    for i, vid in enumerate(videos):
-        if isinstance(vid, dict):
-            url = vid.get("url")
-        else:
-            url = vid
-        if url:
-            MediaAsset.objects.create(
-                property=prop,
-                media_type="video",
-                storage_url=url,
-                order=i
-            )
-            resp["medias"].append({"url": url, "type": "video"})
-            added += 1
-    resp["texts"].append(f"📥 Added {added} file(s). Upload more or type *done* when finished.")
+    if "image" in msg_obj:
+        media_id = msg_obj["image"]["id"]
+        direct_url = get_media_url(media_id)
+
+        # Download & upload to Cloudinary
+        file_resp = requests.get(direct_url, timeout=10)
+        file_resp.raise_for_status()
+        upload_result = cloudinary.uploader.upload(
+            file_resp.content,
+            resource_type="image",
+            folder="property_media",
+            public_id=f"{broker.id}_{property_id}_img{added}",
+            overwrite=True
+        )
+        url = upload_result["secure_url"]
+
+        MediaAsset.objects.create(
+            property=prop,
+            media_type="image",
+            storage_url=url,
+            order=added
+        )
+        resp["medias"].append({"url": url, "type": "image"})
+        added += 1
+
+    # --- Handle video ---
+    if "video" in msg_obj:
+        media_id = msg_obj["video"]["id"]
+        direct_url = get_media_url(media_id)
+
+        file_resp = requests.get(direct_url, timeout=10)
+        file_resp.raise_for_status()
+        upload_result = cloudinary.uploader.upload(
+            file_resp.content,
+            resource_type="video",
+            folder="property_media",
+            public_id=f"{broker.id}_{property_id}_vid{added}",
+            overwrite=True
+        )
+        url = upload_result["secure_url"]
+
+        MediaAsset.objects.create(
+            property=prop,
+            media_type="video",
+            storage_url=url,
+            order=added
+        )
+        resp["medias"].append({"url": url, "type": "video"})
+        added += 1
+
+    if added > 0:
+        resp["texts"].append(f"📥 Added {added} file(s). Upload more or type *done* when finished.")
+    else:
+        resp["texts"].append("⚠️ No valid media found in message.")
+
     return resp
+
     
 
 # def handle_done(broker, resp):
