@@ -1,5 +1,7 @@
 # services/sender_meta.py
 import os, requests
+from dotenv import load_dotenv
+load_dotenv()
 
 META_TOKEN = os.getenv("META_TOKEN")  # from Facebook developer app
 PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID")  # your WABA ID
