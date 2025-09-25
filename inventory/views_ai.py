@@ -292,7 +292,7 @@ def whatsapp_webhook_meta(request):
                 return HttpResponse("Property updated", status=200)
         elif mode == "new_property":
             if msg.lower() in ["done", "skip"]:
-                handle_done(broker)
+                resp= handle_done(broker)
                 for txt in resp.get("texts", []):
                     send_whatsapp_text(phone, txt)
                 return HttpResponse("Done handled", status=200)
