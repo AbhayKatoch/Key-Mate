@@ -869,7 +869,7 @@ def handle_done(broker):
     description = session["description"]
     media = session["media"]
 
-    prop = extract(broker, description=description, media_urls=[m["url"] for m in media])
+    # prop = extract(broker, description=description, media_urls=[m["url"] for m in media])
     prop.status = "active"
     prop.save()
     for m in media:

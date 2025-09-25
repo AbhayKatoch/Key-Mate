@@ -293,6 +293,8 @@ def whatsapp_webhook_meta(request):
         elif mode == "new_property":
             if msg.lower() in ["done", "skip"]:
                 handle_done(broker)
+                for txt in resp.get("texts", []):
+                    send_whatsapp_text(phone, txt)
                 return HttpResponse("Done handled", status=200)
 
             num_media = len(msg_obj.get("image", [])) + len(msg_obj.get("video", []))
