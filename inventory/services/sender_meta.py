@@ -28,7 +28,7 @@ def send_whatsapp_text(to, text):
         return None
 
 def send_whatsapp_media(to, media_url, media_type="image"):
-    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/media"
+    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
