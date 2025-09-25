@@ -717,8 +717,11 @@ def fetch_and_store_media(media_url, broker_id, index, ext="jpg"):
 #     return resp
 
 import requests
-from .services.sender_meta import META_TOKEN
+from dotenv import load_dotenv
 import cloudinary.uploader
+load_dotenv()
+import os 
+META_TOKEN = os.getenv("META_TOKEN")
 
 def get_media_url(media_id: str)-> str:
     url = f"https://graph.facebook.com/v18.0/{media_id}"
@@ -726,6 +729,15 @@ def get_media_url(media_id: str)-> str:
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
     return resp.json().get("url")
+
+def download_meta_media(media_url):
+    """
+    Step 2: download the media binary using the Bearer token
+    """
+    headers = {"Authorization": f"Bearer {META_TOKEN}"}
+    r = requests.get(media_url, headers=headers, stream=True)
+    r.raise_for_status()
+    return r.content
 
 def handle_media(broker, msg_obj):
     resp = make_response()
@@ -745,12 +757,12 @@ def handle_media(broker, msg_obj):
     if "image" in msg_obj:
         media_id = msg_obj["image"]["id"]
         direct_url = get_media_url(media_id)
+        file_bytes = download_meta_media(direct_url)
 
         # Download & upload to Cloudinary
-        file_resp = requests.get(direct_url, timeout=10)
-        file_resp.raise_for_status()
+        
         upload_result = cloudinary.uploader.upload(
-            file_resp.content,
+            file_bytes,
             resource_type="image",
             folder="property_media",
             public_id=f"{broker.id}_{property_id}_img{added}",
@@ -772,10 +784,9 @@ def handle_media(broker, msg_obj):
         media_id = msg_obj["video"]["id"]
         direct_url = get_media_url(media_id)
 
-        file_resp = requests.get(direct_url, timeout=10)
-        file_resp.raise_for_status()
+        file_bytes = download_meta_media(direct_url)
         upload_result = cloudinary.uploader.upload(
-            file_resp.content,
+            file_bytes,
             resource_type="video",
             folder="property_media",
             public_id=f"{broker.id}_{property_id}_vid{added}",
