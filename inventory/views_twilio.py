@@ -720,7 +720,10 @@ def handle_media(broker, msg_obj):
     videos = msg_obj.get("video", [])
     added = 0
     for i, img in enumerate(images):
-        url = img.get("url")
+        if isinstance(img, dict):
+            url = img.get("url")
+        else:
+            url = img
         if url:
             MediaAsset.objects.create(
                 property=prop,
@@ -731,7 +734,10 @@ def handle_media(broker, msg_obj):
             resp["medias"].append({"url": url, "type": "image"})
             added += 1
     for i, vid in enumerate(videos):
-        url = vid.get("url")
+        if isinstance(vid, dict):
+            url = vid.get("url")
+        else:
+            url = vid
         if url:
             MediaAsset.objects.create(
                 property=prop,
