@@ -776,7 +776,6 @@ def handle_media(broker, msg_obj):
             storage_url=url,
             order=added
         )
-        resp["medias"].append({"url": url, "type": "image"})
         added += 1
 
     # --- Handle video ---
@@ -800,7 +799,6 @@ def handle_media(broker, msg_obj):
             storage_url=url,
             order=added
         )
-        resp["medias"].append({"url": url, "type": "video"})
         added += 1
 
     if added > 0:
