@@ -16,11 +16,18 @@ class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all().select_related("broker").prefetch_related("media")
     serializer_class = PropertySerializer
 
+    # def get_queryset(self):
+    #     broker_id = self.request.query_params.get("broker")
+    #     if broker_id:
+    #         return self.queryset.filter(broker_id= broker_id)
+    #     return self.queryset
+
     def get_queryset(self):
-        broker_id = self.request.query_params.get("broker")
-        if broker_id:
-            return self.queryset.filter(broker_id= broker_id)
-        return self.queryset
+        qs = super().get_queryset()
+        phone = self.request.query_params.get("broker_phone")
+        if phone:
+            qs = qs.filter(broker__phone_number=phone)
+        return qs
     
     @action(detail=False, methods=["post"])
     def extract_info(self,request):
