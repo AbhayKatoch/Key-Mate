@@ -44,7 +44,6 @@ class PropertySerializer(serializers.ModelSerializer):
             "status",
             "moderation_flags",
             "embedding",   # keep for AI layer / pgvector
-            "media_assets",
             "created_at",
             "updated_at",
             "media"
