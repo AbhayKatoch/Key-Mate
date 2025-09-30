@@ -40,3 +40,4 @@ cloudinary
 django-cloudinary-storage
 twilio
 redis
+djangorestframework-simplejwt
