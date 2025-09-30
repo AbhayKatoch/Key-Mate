@@ -47,6 +47,13 @@ INSTALLED_APPS = [
     'cloudinary_storage',
 ]
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ]
+}
+
+
 
 import cloudinary
 import cloudinary.uploader
