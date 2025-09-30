@@ -92,7 +92,8 @@ class PropertyViewSet(viewsets.ModelViewSet):
         property.status = "disabled"
         property.save()
         return Response({"status":"disabled", "property": PropertySerializer(property).data()})
-    
+
+from rest_framework.decorators import api_view
    
 @api_view(["GET"])
 def broker_by_phone(request):
