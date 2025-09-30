@@ -16,18 +16,11 @@ class PropertyViewSet(viewsets.ModelViewSet):
     queryset = Property.objects.all().select_related("broker").prefetch_related("media")
     serializer_class = PropertySerializer
 
-    # def get_queryset(self):
-    #     broker_id = self.request.query_params.get("broker")
-    #     if broker_id:
-    #         return self.queryset.filter(broker_id= broker_id)
-    #     return self.queryset
-
     def get_queryset(self):
-        qs = super().get_queryset()
-        phone = self.request.query_params.get("broker_phone")
-        if phone:
-            qs = qs.filter(broker__phone_number=phone)
-        return qs
+        broker_id = self.request.query_params.get("broker")
+        if broker_id:
+            return self.queryset.filter(broker_id= broker_id)
+        return self.queryset
     
     @action(detail=False, methods=["post"])
     def extract_info(self,request):
@@ -101,6 +94,16 @@ class PropertyViewSet(viewsets.ModelViewSet):
         return Response({"status":"disabled", "property": PropertySerializer(property).data()})
     
    
+@api_view(["GET"])
+def broker_by_phone(request):
+    phone = request.query_params.get("phone")
+    if not phone:
+        return Response({"detail": "phone is required"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        broker = Broker.objects.get(phone_number=phone)
+        return Response({"id": broker.id, "name": broker.name, "phone_number": broker.phone_number})
+    except Broker.DoesNotExist:
+        return Response({"detail": "Broker not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class MediaViewSet(viewsets.ModelViewSet):
     queryset = MediaAsset.objects.all()

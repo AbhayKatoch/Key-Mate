@@ -47,6 +47,7 @@ class PropertySerializer(serializers.ModelSerializer):
             "media_assets",
             "created_at",
             "updated_at",
+            "media"
         ]
         read_only_fields = ["short_code", "created_at", "updated_at"]
 
