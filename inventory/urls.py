@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import BrokerViewSet, PropertyViewSet, MediaViewSet, ClientViewSet, broker_by_phone
+from .views import BrokerViewSet, PropertyViewSet, MediaViewSet, ClientViewSet
 from .views_ai import whatsaap_webhook, whatsapp_webhook_meta
 from .views_customer import customer_webhook
 
