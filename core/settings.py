@@ -32,6 +32,11 @@ ALLOWED_HOSTS = [
     "localhost:5173",
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",   # your Vite dev server
+    "https://key-mate.onrender.com",  # your deployed frontend (if any)
+]
+
 
 # Application definition
 
