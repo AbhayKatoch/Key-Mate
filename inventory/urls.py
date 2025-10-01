@@ -16,5 +16,4 @@ urlpatterns = [
     path("twilio/webhook", whatsaap_webhook, name="twilio-webhook" ),
     path("twilio/customer_webhook", customer_webhook, name="customer_webhook"),
     path("whatsapp_webhook_meta", whatsapp_webhook_meta, name="meta-webhook" ),
-    path("brokers/by-phone/", broker_by_phone, name="broker_by_phone"),
 ]

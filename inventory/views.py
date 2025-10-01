@@ -22,6 +22,25 @@ class PropertyViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(broker_id= broker_id)
         return self.queryset
     
+    @action(detail=False, methods=["get"], url_path="by-phone")
+    def by_phone(self, request):
+        phone = request.query_params.get("phone")
+        if not phone:
+            return Response({"detail": "phone is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Normalize minimal formatting (optional but helpful)
+        phone_norm = phone.strip().replace(" ", "").replace("-", "")
+
+        broker = Broker.objects.filter(
+            Q(phone_number=phone_norm) | Q(phone_number__endswith=phone_norm)
+        ).first()
+
+        if not broker:
+            return Response({"detail": "Broker not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # return a compact payload like your earlier view
+        return Response({"id": broker.id, "name": broker.name, "phone_number": broker.phone_number})
+    
     @action(detail=False, methods=["post"])
     def extract_info(self,request):
         broker_id = request.data.get("broker_id")
@@ -93,18 +112,6 @@ class PropertyViewSet(viewsets.ModelViewSet):
         property.save()
         return Response({"status":"disabled", "property": PropertySerializer(property).data()})
 
-from rest_framework.decorators import api_view
-   
-@api_view(["GET"])
-def broker_by_phone(request):
-    phone = request.query_params.get("phone")
-    if not phone:
-        return Response({"detail": "phone is required"}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        broker = Broker.objects.get(phone_number=phone)
-        return Response({"id": broker.id, "name": broker.name, "phone_number": broker.phone_number})
-    except Broker.DoesNotExist:
-        return Response({"detail": "Broker not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class MediaViewSet(viewsets.ModelViewSet):
     queryset = MediaAsset.objects.all()
