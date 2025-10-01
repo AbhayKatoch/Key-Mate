@@ -12,16 +12,6 @@ class BrokerViewSet(viewsets.ModelViewSet):
     queryset = Broker.objects.all()
     serializer_class = BrokerSerializer
 
-class PropertyViewSet(viewsets.ModelViewSet):
-    queryset = Property.objects.all().select_related("broker").prefetch_related("media")
-    serializer_class = PropertySerializer
-
-    def get_queryset(self):
-        broker_id = self.request.query_params.get("broker")
-        if broker_id:
-            return self.queryset.filter(broker_id= broker_id)
-        return self.queryset
-    
     @action(detail=False, methods=["get"], url_path="by-phone")
     def by_phone(self, request):
         phone = request.query_params.get("phone")
@@ -40,6 +30,18 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
         # return a compact payload like your earlier view
         return Response({"id": broker.id, "name": broker.name, "phone_number": broker.phone_number})
+    
+
+class PropertyViewSet(viewsets.ModelViewSet):
+    queryset = Property.objects.all().select_related("broker").prefetch_related("media")
+    serializer_class = PropertySerializer
+
+    def get_queryset(self):
+        broker_id = self.request.query_params.get("broker")
+        if broker_id:
+            return self.queryset.filter(broker_id= broker_id)
+        return self.queryset
+    
     
     @action(detail=False, methods=["post"])
     def extract_info(self,request):
