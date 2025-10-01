@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "key-mate.onrender.com",
-    "http://localhost:5173",
+    "localhost:5173",
 ]
 
 
