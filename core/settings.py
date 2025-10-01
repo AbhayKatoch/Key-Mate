@@ -28,7 +28,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "key-mate.onrender.com"
+    "key-mate.onrender.com",
+    "localhost",
 ]
 
 
