@@ -64,14 +64,14 @@ class PropertyViewSet(viewsets.ModelViewSet):
         if sale_or_rent:
             qs = qs.filter(sale_or_rent = sale_or_rent)
         if price:
-            qs = qs.filter(price_lte = price)
+            qs = qs.filter(price__lte = price)
 
         query_text = request.query_params.get("query_text")
 
         if query_text:
             qs = qs.filter(
                 Q(title__icontains = query_text) |
-                Q(desciption_beautified__icontains  = query_text) |
+                Q(description_beautified__icontains  = query_text) |
                 Q(locality__icontains  = query_text) 
             )
         
