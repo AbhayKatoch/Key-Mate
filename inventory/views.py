@@ -4,15 +4,111 @@ from rest_framework.response import Response
 from django.db.models import Q
 from rest_framework.decorators import action
 from .models import Broker, Property, MediaAsset, ClientRequest
-from .serializers import BrokerSerializer, PropertySerializer, ClientRequestSerializer, MediaAssetSerializer
+from .serializers import BrokerRegisterSerializer, BrokerSerializer, PropertySerializer, ClientRequestSerializer, MediaAssetSerializer
 from .models import Broker
+from rest_framework.generics import CreateAPIView
 from .services.extract import extract
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework import serializers
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+import jwt, datetime
+from django.conf import settings
+from django.contrib.auth.hashers import check_password
+
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        phone = request.data.get("phone")
+        name = request.data.get("name")
+        password = request.data.get("password")
+
+        if not phone or not password:
+            return Response({"error": "phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        broker, created = Broker.objects.get_or_create(phone_number=phone)
+        broker.name = name or broker.name
+        if broker.password and not created:
+            return Response(
+                {"error": "Account already exists. Please login instead."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        broker.set_password(password)   
+        broker.save()
+
+        return Response(
+            {
+                "message": "Broker registered successfully",
+                "id": broker.id,
+                "name": broker.name,
+                "phone": broker.phone_number
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        phone = request.data.get("phone")
+        password = request.data.get("password")
+
+        if not phone or not password:
+            return Response({"error": "Phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        try:
+            broker = Broker.objects.get(phone_number=phone)
+        except Broker.DoesNotExist:
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+        if not broker.password:
+            return Response(
+                {
+                    "error": "Password not set. Please create one before logging in.",
+                    "needs_setup": True,
+                    "broker_id": str(broker.id),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if not broker.check_password(password):
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        payload = {
+            "id": str(broker.id),
+            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
+            "iat": datetime.datetime.now(),
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+        return Response({"token": token, "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number}})
+
+
+class BrokerRegisterView(CreateAPIView):
+    queryset = Broker.objects.all()
+    serializer_class = BrokerRegisterSerializer
+
+  
+class BrokerMeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        broker = request.user
+        serializer = BrokerSerializer(broker)
+        return Response(serializer.data)
 
 class BrokerViewSet(viewsets.ModelViewSet):
     queryset = Broker.objects.all()
     serializer_class = BrokerSerializer
 
-    @action(detail=False, methods=["get"], url_path="by-phone")
+    permission_classes = [IsAdminUser]
+
+    @action(detail=False, methods=["get"], url_path="by-phone", permission_classes=[AllowAny])
     def by_phone(self, request):
         phone = request.query_params.get("phone")
         if not phone:

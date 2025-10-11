@@ -1,16 +1,43 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 import uuid
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-class Broker(models.Model):
+
+class BrokerManager(BaseUserManager):
+    def create_user(self, phone_number, password=None, **extra_fields):
+        if not phone_number:
+            raise ValueError('The Phone Number must be set')
+        phone_number = str(phone_number).strip()
+        user = self.model(phone_number=phone_number, **extra_fields)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(phone_number, password, **extra_fields)
+
+class Broker(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     phone_number = models.CharField(max_length=100, unique = True)
     name = models.CharField(max_length=255)
     email = models.EmailField(blank=True, null=True)
+
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    USERNAME_FIELD = 'phone_number'
+    REQUIRED_FIELDS = []
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     broker_code = models.CharField(max_length=50, blank=True, unique=True)
+    objects = BrokerManager()
     
-
     def save(self, *args, **kwargs):
         # Ensure id exists
         if not self.id:

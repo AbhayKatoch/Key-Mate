@@ -6,6 +6,27 @@ class BrokerSerializer(serializers.ModelSerializer):
         model = Broker
         fields = '__all__'
 
+class BrokerRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Broker
+        fields = ['id', 'name', 'phone', 'password']
+
+    def create(self, validated_data):
+        phone = validated_data.get("phone")
+        broker, created = Broker.objects.get_or_create(
+            phone = phone,
+            defaults={
+                "name": validated_data.get("name"),
+                "email": validated_data.get("email"),
+            }
+
+        )
+        broker.password = validated_data.get("password")
+        broker.save()
+        return broker
+
 class MediaAssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = MediaAsset
