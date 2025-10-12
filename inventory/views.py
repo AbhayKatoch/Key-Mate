@@ -26,26 +26,36 @@ class RegisterView(APIView):
         phone = request.data.get("phone")
         name = request.data.get("name")
         password = request.data.get("password")
+        email = request.data.get("email")
 
         if not phone or not password:
             return Response({"error": "phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
+        phone = str(phone).strip().replace(" ", "").replace("-", "")
         broker, created = Broker.objects.get_or_create(phone_number=phone)
-        broker.name = name or broker.name
         if broker.password and not created:
             return Response(
                 {"error": "Account already exists. Please login instead."},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        broker.name = name or broker.name
+        broker.email = email or broker.email
+        
+
         broker.set_password(password)   
         broker.save()
+        payload = {
+            "id": str(broker.id),
+            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
+            "iat": datetime.datetime.now(),
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
         return Response(
             {
-                "message": "Broker registered successfully",
-                "id": broker.id,
-                "name": broker.name,
-                "phone": broker.phone_number
+                "message": "Registration successful",
+                "token": token,
+                "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number},
             },
             status=status.HTTP_201_CREATED,
         )
