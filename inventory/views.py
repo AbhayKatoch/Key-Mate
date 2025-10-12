@@ -60,44 +60,72 @@ class RegisterView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-class LoginView(APIView):
-    permission_classes = [AllowAny]
+# class LoginView(APIView):
+#     permission_classes = [AllowAny]
 
+#     def post(self, request):
+#         phone = request.data.get("phone")
+#         password = request.data.get("password")
+
+#         if not phone or not password:
+#             return Response({"error": "Phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+#         try:
+#             broker = Broker.objects.get(phone_number=phone)
+#         except Broker.DoesNotExist:
+#             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+#         if not broker.password:
+#             return Response(
+#                 {
+#                     "error": "Password not set. Please create one before logging in.",
+#                     "needs_setup": True,
+#                     "broker_id": str(broker.id),
+#                 },
+#                 status=status.HTTP_403_FORBIDDEN,
+#             )
+
+#         if not broker.check_password(password):
+#             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         payload = {
+#             "id": str(broker.id),
+#             "exp": datetime.datetime.now() + datetime.timedelta(days=1),
+#             "iat": datetime.datetime.now(),
+#         }
+#         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+#         return Response({"token": token, "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number}})
+
+class LoginView(APIView):
     def post(self, request):
         phone = request.data.get("phone")
         password = request.data.get("password")
-
-        if not phone or not password:
-            return Response({"error": "Phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
-
-
+        
         try:
             broker = Broker.objects.get(phone_number=phone)
         except Broker.DoesNotExist:
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
-
+            return Response({"error": "No account found"}, status=404)
+        
         if not broker.password:
-            return Response(
-                {
-                    "error": "Password not set. Please create one before logging in.",
-                    "needs_setup": True,
-                    "broker_id": str(broker.id),
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
+            return Response({
+                "error": "Password not set. Please create one.",
+                "needs_setup": True,
+                "broker_id": str(broker.id)
+            }, status=403)
+        
         if not broker.check_password(password):
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        payload = {
-            "id": str(broker.id),
-            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
-            "iat": datetime.datetime.now(),
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
-        return Response({"token": token, "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number}})
+            return Response({"error": "Invalid password"}, status=401)
+        
+        # ✅ success
+        return Response({
+            "message": "Login successful",
+            "broker_id": str(broker.id),
+            "phone": broker.phone_number,
+            "name": broker.name
+        })
 
 
 class BrokerRegisterView(CreateAPIView):
