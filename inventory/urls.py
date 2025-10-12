@@ -13,7 +13,7 @@ router.register(r'requests', ClientViewSet, basename='clientrequest')
 urlpatterns = [
     path('', include(router.urls)),
     path("brokers/register/", RegisterView.as_view(), name="broker-register"),
-    path("brokers/login", LoginView.as_view(), name="broker-login"),
+    path("brokers/login/", LoginView.as_view(), name="broker-login"),
     path("brokers/me/", BrokerMeView.as_view(), name="broker-me"),
 
     path("twilio/webhook", whatsaap_webhook, name="twilio-webhook" ),
