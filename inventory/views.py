@@ -100,32 +100,47 @@ class RegisterView(APIView):
 #         return Response({"token": token, "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number}})
 
 class LoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         phone = request.data.get("phone")
         password = request.data.get("password")
-        
+
+        if not phone or not password:
+            return Response({"error": "Phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             broker = Broker.objects.get(phone_number=phone)
         except Broker.DoesNotExist:
-            return Response({"error": "No account found"}, status=404)
-        
+            return Response({"error": "No account found"}, status=status.HTTP_404_NOT_FOUND)
+
         if not broker.password:
             return Response({
                 "error": "Password not set. Please create one.",
                 "needs_setup": True,
                 "broker_id": str(broker.id)
-            }, status=403)
-        
+            }, status=status.HTTP_403_FORBIDDEN)
+
         if not broker.check_password(password):
-            return Response({"error": "Invalid password"}, status=401)
-        
-        # ✅ success
+            return Response({"error": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # ✅ Success - generate JWT
+        payload = {
+            "id": str(broker.id),
+            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
+            "iat": datetime.datetime.now(),
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
         return Response({
             "message": "Login successful",
-            "broker_id": str(broker.id),
-            "phone": broker.phone_number,
-            "name": broker.name
-        })
+            "token": token,
+            "broker": {
+                "id": str(broker.id),
+                "name": broker.name,
+                "phone": broker.phone_number,
+            },
+        }, status=status.HTTP_200_OK)
 
 
 class BrokerRegisterView(CreateAPIView):
