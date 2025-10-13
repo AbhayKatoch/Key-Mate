@@ -182,6 +182,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
     
 
 class PropertyViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Property.objects.all().select_related("broker").prefetch_related("media")
     serializer_class = PropertySerializer
 
