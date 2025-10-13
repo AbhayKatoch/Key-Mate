@@ -314,7 +314,7 @@ def whatsapp_webhook_meta(request):
                 send_whatsapp_media(phone, media["url"], media["type"])
             return HttpResponse("Edit broker session handled", status=200)
             # ✅ Handle Password Reset via WhatsApp
-        if mode == "reset_password":
+        elif mode == "reset_password":
             step = session.get("step")
             broker_id = session.get("broker_id")
 
