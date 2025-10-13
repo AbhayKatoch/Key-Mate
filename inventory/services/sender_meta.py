@@ -12,6 +12,8 @@ def send_whatsapp_text(to, text):
         "Authorization": f"Bearer {META_TOKEN}",
         "Content-Type": "application/json"
     }
+    if not to.startswith("+"):
+        to = f"+91{to}"
     payload = {
         "messaging_product": "whatsapp",
         "to": to,
