@@ -285,6 +285,7 @@ class ClientViewSet(viewsets.ModelViewSet):
         return self.queryset
 
 class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         phone = request.data.get("phone")
 
