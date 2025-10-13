@@ -74,8 +74,6 @@ def make_response():
 
 
 def handle_onboarding(phone, msg):
-    session = get_session(phone)
-    resp = make_response()
     if phone.startswith("whatsapp:"):
         phone = phone.replace("whatsapp:", "").strip()
 
@@ -84,6 +82,8 @@ def handle_onboarding(phone, msg):
     elif phone.startswith("+91") and len(phone) == 13:
         phone = phone[3:]
 
+    session = get_session(phone)
+    resp = make_response()
     if not session:
         set_session(phone, {"mode":"onboarding", "step":"ask_name"})
         resp["texts"].append("Welcome to KeyMate!\nLet's get you onboarded.\n\nPlease tell me your *full name*.")
