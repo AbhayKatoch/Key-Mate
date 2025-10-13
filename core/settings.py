@@ -36,6 +36,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",   # your Vite dev server
     "https://key-mate.onrender.com",  # your deployed frontend (if any)
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -48,10 +49,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders'
     'inventory',
     'cloudinary',
     'cloudinary_storage',
-    'corsheaders'
 ]
 
 REST_FRAMEWORK = {
