@@ -284,3 +284,28 @@ class ClientViewSet(viewsets.ModelViewSet):
             return self.queryset.filter(broker_id=broker_id)
         return self.queryset
 
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        phone = request.data.get("phone")
+
+        if not phone:
+            return Response({"error": "Phone number required."}, status=400)
+
+        try:
+            broker = Broker.objects.get(phone_number=phone)
+        except Broker.DoesNotExist:
+            return Response({"error": "No account found with this phone number."}, status=404)
+
+        from .views_twilio import set_session
+        set_session(phone, {"mode": "reset_password", "step": "awaiting_password", "broker_id": str(broker.id)})
+
+        msg = (
+            f"Hi {broker.name or ''} 👋,\n\n"
+            "We received a password reset request for your PropertyTrackrr account.\n"
+            "👉 Please *reply with your new password* to reset it.\n\n"
+            "If you didn’t request this, just ignore this message."
+        )
+        from .services.sender_meta import send_whatsapp_text
+        send_whatsapp_text(phone, msg)
+
+        return Response({"message": "Password reset instructions sent via WhatsApp."}, status=200)

@@ -313,7 +313,25 @@ def whatsapp_webhook_meta(request):
             for media in resp.get("medias", []):
                 send_whatsapp_media(phone, media["url"], media["type"])
             return HttpResponse("Edit broker session handled", status=200)
-        
+            # ✅ Handle Password Reset via WhatsApp
+        if mode == "reset_password":
+            step = session.get("step")
+            broker_id = session.get("broker_id")
+
+            if step == "awaiting_password":
+                new_password = msg.strip()
+                try:
+                    broker = Broker.objects.get(id=broker_id)
+                    broker.set_password(new_password)
+                    broker.save()
+                    clear_session(broker.id)
+                    send_whatsapp_text(phone, "✅ Your password has been reset successfully!\nYou can now log in to your account.")
+                    return HttpResponse("Password reset successful", status=200)
+                except Broker.DoesNotExist:
+                    clear_session(broker.id)
+                    send_whatsapp_text(phone, "⚠️ Something went wrong. Please try again later.")
+                    return HttpResponse("Broker not found", status=400)
+
     try:
         intent = classify_intent(msg)
     except Exception:
