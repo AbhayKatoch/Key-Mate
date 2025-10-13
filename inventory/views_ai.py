@@ -220,6 +220,13 @@ def whatsapp_webhook_meta(request):
     msg_id = msg_obj.get("id")
     msg = msg_obj.get("text", {}).get("body","").strip()
     phone = msg_obj.get("from")
+    if phone.startswith("whatsapp:"):
+        phone = phone.replace("whatsapp:", "").strip()
+    if phone.startswith("+91"):
+        phone = phone[3:]
+    elif phone.startswith("91") and len(phone) == 12:
+        phone = phone[2:]
+    phone = phone.strip()[-10:]
 
     if msg_id and is_duplicate_message(msg_id):
         logging.info(f"Duplicate message {msg_id} from {phone}, ignoring.")

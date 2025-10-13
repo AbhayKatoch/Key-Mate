@@ -84,6 +84,13 @@ def handle_onboarding(phone, msg):
 
     session = get_session(phone)
     resp = make_response()
+    if Broker.objects.filter(phone_number=phone).exists():
+        broker = Broker.objects.get(phone_number=phone)
+        resp["texts"].append(
+            f"👋 Welcome back, {broker.name or 'Broker'}!\nYou’re already registered.\n"
+            "You can start using KeyMate right away.\nType *help* for a list of commands."
+        )
+        return resp
     if not session:
         set_session(phone, {"mode":"onboarding", "step":"ask_name"})
         resp["texts"].append("Welcome to KeyMate!\nLet's get you onboarded.\n\nPlease tell me your *full name*.")
