@@ -288,7 +288,6 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         phone = request.data.get("phone")
-        broker = Broker.objects.get(phone_number = phone)
 
         if not phone:
             return Response({"error": "Phone number required."}, status=400)
