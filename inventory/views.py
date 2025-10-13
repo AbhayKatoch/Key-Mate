@@ -288,6 +288,7 @@ class ForgotPasswordView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
         phone = request.data.get("phone")
+        broker = Broker.objects.get(phone_number = phone)
 
         if not phone:
             return Response({"error": "Phone number required."}, status=400)
@@ -298,7 +299,7 @@ class ForgotPasswordView(APIView):
             return Response({"error": "No account found with this phone number."}, status=404)
 
         from .views_twilio import set_session
-        set_session(phone, {"mode": "reset_password", "step": "awaiting_password", "broker_id": str(broker.id)})
+        set_session(broker.id, {"mode": "reset_password", "step": "awaiting_password", "broker_id": str(broker.id)})
 
         msg = (
             f"Hi {broker.name or ''} 👋,\n\n"
