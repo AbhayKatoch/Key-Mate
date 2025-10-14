@@ -19,6 +19,49 @@ from django.contrib.auth.hashers import check_password
 
 
 
+# class RegisterView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def post(self, request):
+#         phone = request.data.get("phone")
+#         name = request.data.get("name")
+#         password = request.data.get("password")
+#         email = request.data.get("email")
+
+#         if not phone or not password:
+#             return Response({"error": "phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         phone = str(phone).strip().replace(" ", "").replace("-", "")
+#         broker, created = Broker.objects.get_or_create(phone_number=phone)
+#         if broker.password and not created:
+#             return Response(
+#                 {"error": "Account already exists. Please login instead."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+#         broker.name = name or broker.name
+#         broker.email = email or broker.email
+        
+
+#         broker.set_password(password)   
+#         broker.save()
+#         payload = {
+#             "id": str(broker.id),
+#             "exp": datetime.datetime.now() + datetime.timedelta(days=1),
+#             "iat": datetime.datetime.now(),
+#         }
+#         token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+
+#         return Response(
+#             {
+#                 "message": "Registration successful",
+#                 "token": token,
+#                 "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number},
+#             },
+#             status=status.HTTP_201_CREATED,
+#         )
+
+from rest_framework_simplejwt.tokens import RefreshToken
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -33,32 +76,23 @@ class RegisterView(APIView):
 
         phone = str(phone).strip().replace(" ", "").replace("-", "")
         broker, created = Broker.objects.get_or_create(phone_number=phone)
+
         if broker.password and not created:
-            return Response(
-                {"error": "Account already exists. Please login instead."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Account already exists. Please login instead."}, status=status.HTTP_400_BAD_REQUEST)
+
         broker.name = name or broker.name
         broker.email = email or broker.email
-        
-
-        broker.set_password(password)   
+        broker.set_password(password)
         broker.save()
-        payload = {
-            "id": str(broker.id),
-            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
-            "iat": datetime.datetime.now(),
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
-        return Response(
-            {
-                "message": "Registration successful",
-                "token": token,
-                "broker": {"id": broker.id, "name": broker.name, "phone": broker.phone_number},
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        refresh = RefreshToken.for_user(broker)
+
+        return Response({
+            "message": "Registration successful",
+            "token": str(refresh.access_token),
+            "refresh": str(refresh),
+            "broker": {"id": str(broker.id), "name": broker.name, "phone": broker.phone_number},
+        }, status=status.HTTP_201_CREATED)
 
 # class LoginView(APIView):
 #     permission_classes = [AllowAny]
@@ -142,12 +176,7 @@ class RegisterView(APIView):
 #             },
 #         }, status=status.HTTP_200_OK)
 
-import jwt, datetime
-from django.conf import settings 
-# Add this required import from Simple JWT's internal utilities
-from rest_framework_simplejwt.settings import api_settings
-
-# In views.py (Replace the payload and token generation inside the successful block)
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -155,10 +184,6 @@ class LoginView(APIView):
     def post(self, request):
         phone = request.data.get("phone")
         password = request.data.get("password")
-        
-        # ... (Authentication logic is correct)
-
-        # ... (Authentication checks for broker and password)
 
         if not phone or not password:
             return Response({"error": "Phone and password are required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -178,36 +203,21 @@ class LoginView(APIView):
         if not broker.check_password(password):
             return Response({"error": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # ✅ FIX: Generate Simple JWT-compatible token
-        
-        # 1. Get the Simple JWT's specific token lifespan settings
-        # This will ensure your token expires correctly
-        access_token_lifetime = api_settings.ACCESS_TOKEN_LIFETIME
-
-        # 2. Create the Simple JWT compliant payload
-        payload = {
-            # 1. CRITICAL: Simple JWT requires 'user_id' by default to look up the user.
-            "user_id": str(broker.id), 
-            # 2. REQUIRED: Token type.
-            "token_type": "access",    
-            # 3. Timezone-aware expiration (Good practice)
-            # Use datetime.UTC for compatibility if your Python version supports it, otherwise use get_current_timezone()
-            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1),
-            "iat": datetime.datetime.now(datetime.timezone.utc),
-        }
-        
-        # 3. Encode the payload using the configured SECRET_KEY and algorithm
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        # ✅ Generate SimpleJWT tokens
+        refresh = RefreshToken.for_user(broker)
 
         return Response({
             "message": "Login successful",
-            "token": token,
+            "token": str(refresh.access_token),
+            "refresh": str(refresh),
             "broker": {
                 "id": str(broker.id),
                 "name": broker.name,
                 "phone": broker.phone_number,
             },
         }, status=status.HTTP_200_OK)
+
+
 class BrokerRegisterView(CreateAPIView):
     queryset = Broker.objects.all()
     serializer_class = BrokerRegisterSerializer
