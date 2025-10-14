@@ -195,8 +195,7 @@ class LoginView(APIView):
         }
         
         # 3. Encode the payload using the configured SECRET_KEY and algorithm
-        from rest_framework_simplejwt.utils import jwt_encode_handler
-        token = jwt_encode_handler(payload)
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
         return Response({
             "message": "Login successful",
