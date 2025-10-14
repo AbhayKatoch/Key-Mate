@@ -186,12 +186,14 @@ class LoginView(APIView):
 
         # 2. Create the Simple JWT compliant payload
         payload = {
-            # Use the user_id claim that Simple JWT expects
-            api_settings.USER_ID_FIELD: str(broker.id),
-            # Add the required token type claim
-            api_settings.TOKEN_TYPE_CLAIM: "access", 
-            "exp": datetime.datetime.utcnow() + access_token_lifetime, # Use JWT lifetime setting
-            "iat": datetime.datetime.utcnow(),
+            # 1. CRITICAL: Simple JWT requires 'user_id' by default to look up the user.
+            "user_id": str(broker.id), 
+            # 2. REQUIRED: Token type.
+            "token_type": "access",    
+            # 3. Timezone-aware expiration (Good practice)
+            # Use datetime.UTC for compatibility if your Python version supports it, otherwise use get_current_timezone()
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1),
+            "iat": datetime.datetime.now(datetime.timezone.utc),
         }
         
         # 3. Encode the payload using the configured SECRET_KEY and algorithm
