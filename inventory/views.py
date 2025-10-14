@@ -16,7 +16,7 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 import jwt, datetime
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class RegisterView(APIView):
@@ -125,21 +125,16 @@ class LoginView(APIView):
             return Response({"error": "Invalid password"}, status=status.HTTP_401_UNAUTHORIZED)
 
         # ✅ Success - generate JWT
-        payload = {
-            "id": str(broker.id),
-            "exp": datetime.datetime.now() + datetime.timedelta(days=1),
-            "iat": datetime.datetime.now(),
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
+        refresh = RefreshToken.for_user(broker)
         return Response({
             "message": "Login successful",
-            "token": token,
             "broker": {
                 "id": str(broker.id),
                 "name": broker.name,
                 "phone": broker.phone_number,
             },
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
         }, status=status.HTTP_200_OK)
 
 
