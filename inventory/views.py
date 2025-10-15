@@ -95,42 +95,12 @@ class RegisterView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import user_passes_test
-from .models import Property  # adjust your model import path
-import logging
-from datetime import timedelta
-from django.utils import timezone
+
 from django.http import JsonResponse
 
-logger = logging.getLogger(__name__)
+def demo_cron(request):
+    return JsonResponse({"status": "200 OK"})
 
-@csrf_exempt
-@user_passes_test(lambda u: u.is_superuser)  # only admin can trigger manually
-def run_demo_cron(request):
-    """
-    Demo endpoint for simulating a cron job.
-    - Disables properties inactive for 30+ days.
-    - Logs summary.
-    """
-    now = timezone.now()
-    cutoff_date = now - timedelta(days=30)
-
-    inactive_properties = Property.objects.filter(
-        updated_at__lt=cutoff_date, status="active"
-    )
-    count = inactive_properties.count()
-
-    # Perform updates
-    inactive_properties.update(status="disabled")
-
-    logger.info(f"[CRON] Disabled {count} properties inactive for 30 days.")
-
-    return JsonResponse({
-        "status": "success",
-        "message": f"Disabled {count} old properties.",
-        "timestamp": now.strftime("%Y-%m-%d %H:%M:%S")
-    })
 # class LoginView(APIView):
 #     permission_classes = [AllowAny]
 
