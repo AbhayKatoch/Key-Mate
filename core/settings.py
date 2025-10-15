@@ -34,7 +34,7 @@ ALLOWED_HOSTS = [
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",   # your Vite dev server
-    "proper-ty-frontend.vercel.app",  # your deployed frontend (if any)
+    "https://proper-ty-frontend.vercel.app",  # your deployed frontend (if any)
 ]
 
 
