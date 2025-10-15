@@ -97,8 +97,11 @@ class RegisterView(APIView):
 
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import user_passes_test
-from core.models import Property  # adjust your model import path
+from .models import Property  # adjust your model import path
 import logging
+from datetime import timedelta
+from django.utils import timezone
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
 
