@@ -94,6 +94,13 @@ class RegisterView(APIView):
             "broker": {"id": str(broker.id), "name": broker.name, "phone": broker.phone_number},
         }, status=status.HTTP_201_CREATED)
 
+
+
+def ping(request):
+    
+    return Response({
+        "status": "success",
+    })
 # class LoginView(APIView):
 #     permission_classes = [AllowAny]
 
@@ -386,3 +393,6 @@ class ForgotPasswordView(APIView):
         send_whatsapp_text(phone, msg)
 
         return Response({"message": "Password reset instructions sent via WhatsApp."}, status=200)
+
+
+
