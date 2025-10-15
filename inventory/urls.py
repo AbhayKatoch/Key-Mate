@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ping,BrokerMeView, LoginView, RegisterView,BrokerViewSet,ForgotPasswordView, PropertyViewSet, MediaViewSet, ClientViewSet
+from .views import run_demo_cron,BrokerMeView, LoginView, RegisterView,BrokerViewSet,ForgotPasswordView, PropertyViewSet, MediaViewSet, ClientViewSet
 from .views_ai import whatsaap_webhook, whatsapp_webhook_meta
 from .views_customer import customer_webhook
 
@@ -19,5 +19,5 @@ urlpatterns = [
     path("twilio/webhook", whatsaap_webhook, name="twilio-webhook" ),
     path("twilio/customer_webhook", customer_webhook, name="customer_webhook"),
     path("whatsapp_webhook_meta", whatsapp_webhook_meta, name="meta-webhook" ),
-    path("ping/", ping,name="ping" )
+    path("run-cron/", run_demo_cron, name="run_demo_cron"),
 ]
