@@ -226,7 +226,7 @@ def handle_meta_media_upload(broker, property_obj, media_id, from_number):
         )
 
         mark_media_processed(media_id)
-        send_whatsapp_text(from_number, "✅ Media uploaded successfully!")
+        # send_whatsapp_text(from_number, "✅ Media uploaded successfully!")
         return file_url
     
     except Exception as e:
@@ -254,9 +254,19 @@ def schedule_media_upload(broker, property_obj, phone):
         result = handle_meta_media_upload(broker, property_obj, media_id, phone)
         if result:
             success += 1
-
-    send_whatsapp_text(phone, f"✅ Uploaded {success}/{len(media_batch)} image(s) successfully!")
+    send_whatsapp_text(
+        phone,
+        f"✅ Uploaded {success}/{len(media_batch)} image(s) successfully!\n\n"
+        "If you have more, send them now.\n"
+        "When you're done, type *done* or *skip* to finish adding this property."
+    )
     upload_timers.pop(broker_id, None)
+    Timer(10.0, lambda: send_whatsapp_text(
+        phone,
+        "💡 Looks like you’re done sending images!\n"
+        "Type *done* to finalize this property, or *skip* to cancel."
+    )).start()
+
 
 
 
@@ -376,6 +386,8 @@ def whatsapp_webhook_meta(request):
                 resp= handle_done(broker)
                 for txt in resp.get("texts", []):
                     send_whatsapp_text(phone, txt)
+                send_whatsapp_text(phone, "🎯 All set! Your property is live now. You can view it in your dashboard or type 'list' to see all properties.")
+
                 return HttpResponse("Done handled", status=200)
 
             # num_media = len(msg_obj.get("image", [])) + len(msg_obj.get("video", []))
