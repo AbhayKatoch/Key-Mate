@@ -261,7 +261,7 @@ def schedule_media_upload(broker, property_obj, phone):
         "When you're done, type *done* or *skip* to finish adding this property."
     )
     upload_timers.pop(broker_id, None)
-    Timer(10.0, lambda: send_whatsapp_text(
+    Timer(25.0, lambda: send_whatsapp_text(
         phone,
         "💡 Looks like you’re done sending images!\n"
         "Type *done* to finalize this property, or *skip* to cancel."
@@ -452,6 +452,11 @@ def whatsapp_webhook_meta(request):
                     return HttpResponse("Broker not found", status=400)
 
     try:
+        # ⛔ Skip intent classification for pure media messages
+# ✅ Skip intent classification only if message has media but no text
+        if ("image" in msg_obj or "video" in msg_obj) and not msg.strip():
+            return HttpResponse("Media upload handled", status=200)
+
         intent = classify_intent(msg)
     except Exception:
         send_whatsapp_text(phone, "⚠️ Sorry, I couldn’t understand. Type 'help' for commands.")
