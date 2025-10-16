@@ -451,16 +451,16 @@ def whatsapp_webhook_meta(request):
                     send_whatsapp_text(phone, "⚠️ Something went wrong. Please try again later.")
                     return HttpResponse("Broker not found", status=400)
 
-    try:
+    # try:
         # ⛔ Skip intent classification for pure media messages
 # ✅ Skip intent classification only if message has media but no text
-        if ("image" in msg_obj or "video" in msg_obj) and not msg.strip():
-            return HttpResponse("Media upload handled", status=200)
+        # if ("image" in msg_obj or "video" in msg_obj) and not msg.strip():
+        #     return HttpResponse("Media upload handled", status=200)
 
-        intent = classify_intent(msg)
-    except Exception:
-        send_whatsapp_text(phone, "⚠️ Sorry, I couldn’t understand. Type 'help' for commands.")
-        return HttpResponse(status =200)
+    intent = classify_intent(msg)
+    # except Exception:
+    #     send_whatsapp_text(phone, "⚠️ Sorry, I couldn’t understand. Type 'help' for commands.")
+    #     return HttpResponse(status =200)
 
     action = intent.action
     if action in COMMANDS:
