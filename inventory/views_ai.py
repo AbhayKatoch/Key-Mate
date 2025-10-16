@@ -240,7 +240,6 @@ from threading import Timer
 upload_timers = {}  # global dict to avoid multiple timers per broker
 
 def schedule_media_upload(broker, property_obj, phone):
-    """Triggered a few seconds after the last image arrives."""
     broker_id = broker.id
     media_batch = pop_media_queue(broker_id)
     if not media_batch:
@@ -413,11 +412,9 @@ def whatsapp_webhook_meta(request):
                     if not media_obj:
                         continue
 
-                    # WhatsApp always sends single media per webhook
                     if isinstance(media_obj, dict) and "id" in media_obj:
                         add_media_to_queue(broker.id, media_obj["id"])
 
-                # debounce uploads: wait 3 seconds before processing batch
                 if broker.id in upload_timers:
                     upload_timers[broker.id].cancel()
 

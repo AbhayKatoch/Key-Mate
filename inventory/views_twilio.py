@@ -88,12 +88,12 @@ def handle_onboarding(phone, msg):
         broker = Broker.objects.get(phone_number=phone)
         resp["texts"].append(
             f"👋 Welcome back, {broker.name or 'Broker'}!\nYou’re already registered.\n"
-            "You can start using KeyMate right away.\nType *help* for a list of commands."
+            "You can start using PropertyTrackrr right away.\nType *help* for a list of commands."
         )
         return resp
     if not session:
         set_session(phone, {"mode":"onboarding", "step":"ask_name"})
-        resp["texts"].append("Welcome to KeyMate!\nLet's get you onboarded.\n\nPlease tell me your *full name*.")
+        resp["texts"].append("Welcome to PropertyTrackrr!\nLet's get you onboarded.\n\nPlease tell me your *full name*.")
         return resp
 
     step = session.get("step")
@@ -114,7 +114,7 @@ def handle_onboarding(phone, msg):
         clear_session(phone)
         resp["texts"].append(
             f"✅ You’re registered, {broker.name}!\n\n"
-            f"Here’s how to use KeyMate:\n"
+            f"Here’s how to use PropertyTrackrr:\n"
             f"1️⃣ Send me a property description → I’ll extract details.\n"
             f"2️⃣ Upload images/videos → type 'done' when finished.\n"
             f"3️⃣ I’ll create a draft property for you.\n"
@@ -343,7 +343,7 @@ def handle_new_property(broker, intent=None, msg=None):
 def handle_help(broker, intent, msg=None):
     resp = make_response()
     resp["texts"].append(
-        "*KeyMate Bot Help*\n\n"
+        "*PropertyTrackrr Bot Help*\n\n"
         "Here are the commands you can use:\n\n"
         "🏡 Property Management:\n"
         "- Send property description → Add new property\n"
