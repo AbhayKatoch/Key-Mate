@@ -319,7 +319,11 @@ def whatsapp_webhook_meta(request):
         broker = Broker.objects.get(phone_number=phone)
     except Broker.DoesNotExist:
         handle_onboarding(phone, msg)
-        return HttpResponse("Onboarding sent", status=200)
+        for txt in resp.get("texts", []):
+            send_whatsapp_text(phone, txt)
+        for media in resp.get("medias", []):
+            send_whatsapp_media(phone, media["url"], media["type"])
+        return HttpResponse("Onboarding handled", status=200)
     
     session = get_session(broker.id)
     if session:

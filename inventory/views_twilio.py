@@ -92,8 +92,13 @@ def handle_onboarding(phone, msg):
         )
         return resp
     if not session:
-        set_session(phone, {"mode":"onboarding", "step":"ask_name"})
-        resp["texts"].append("Welcome to PropertyTrackrr!\nLet's get you onboarded.\n\nPlease tell me your *full name*.")
+        resp["texts"].append(
+        "👋 Hi there! Welcome to PropertyTrackrr — your AI-powered real estate assistant."
+        )
+        resp["texts"].append(
+            "Let's get you onboarded.\n\nPlease tell me your *full name*."
+        )
+        set_session(phone, {"mode": "onboarding", "step": "ask_name"})
         return resp
 
     step = session.get("step")
