@@ -318,13 +318,26 @@ def whatsapp_webhook_meta(request):
     try:
         broker = Broker.objects.get(phone_number=phone)
     except Broker.DoesNotExist:
-        handle_onboarding(phone, msg)
+        try:
+            resp = handle_onboarding(phone, msg)
+        except Exception as e:
+            print(f"[ERROR] Onboarding failed for {phone}: {e}")
+            resp = {"texts": ["⚠️ Something went wrong during onboarding. Please try again later."], "medias": []}
+
         for txt in resp.get("texts", []):
-            send_whatsapp_text(phone, txt)
+            try:
+                send_whatsapp_text(phone, txt)
+            except Exception as e:
+                print(f"[ERROR] Failed to send onboarding text: {e}")
+
         for media in resp.get("medias", []):
-            send_whatsapp_media(phone, media["url"], media["type"])
-        return HttpResponse("Onboarding handled", status=200)
-    
+            try:
+                send_whatsapp_media(phone, media["url"], media["type"])
+            except Exception as e:
+                print(f"[ERROR] Failed to send onboarding media: {e}")
+
+        return HttpResponse("Onboarding handled safely", status=200)
+
     session = get_session(broker.id)
     if session:
         mode = session.get("mode")
