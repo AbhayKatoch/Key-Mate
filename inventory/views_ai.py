@@ -5,7 +5,7 @@ from urllib.parse import parse_qs
 from .views_twilio import EDIT_FIELDS_MAP
 
 from .models import Broker, Property
-from inventory.services.redis_setup import get_session, set_session, clear_session, is_media_processed, mark_media_processed
+from inventory.services.redis_setup import get_session, set_session, clear_session, is_media_processed, mark_media_processed, add_media_to_queue, pop_media_queue
 from inventory.services.ai_intent import classify_intent
 from .models import Broker, Property, MediaAsset
 from .views_twilio import (
@@ -235,7 +235,28 @@ def handle_meta_media_upload(broker, property_obj, media_id, from_number):
         return None
 
 
+from threading import Timer
 
+upload_timers = {}  # global dict to avoid multiple timers per broker
+
+def schedule_media_upload(broker, property_obj, phone):
+    """Triggered a few seconds after the last image arrives."""
+    broker_id = broker.id
+    media_batch = pop_media_queue(broker_id)
+    if not media_batch:
+        return
+
+    send_whatsapp_text(phone, f"📸 Got {len(media_batch)} image(s)! Uploading them now...")
+
+    success = 0
+    for media in media_batch:
+        media_id = media["id"]
+        result = handle_meta_media_upload(broker, property_obj, media_id, phone)
+        if result:
+            success += 1
+
+    send_whatsapp_text(phone, f"✅ Uploaded {success}/{len(media_batch)} image(s) successfully!")
+    upload_timers.pop(broker_id, None)
 
 
 
@@ -374,26 +395,24 @@ def whatsapp_webhook_meta(request):
                     send_whatsapp_text(phone, "⚠️ Property not found. Please start again.")
                     return HttpResponse("Property not found", status=200)
 
-                send_whatsapp_text(phone, "📸 Got your media! Uploading...")
-
-                # Handle one or more media objects
-                for m_type in ["image", "video"]:
+                media_types = ["image", "video"]
+                for m_type in media_types:
                     media_obj = msg_obj.get(m_type)
                     if not media_obj:
                         continue
 
-                    # If multiple items are sent in a single message
-                    if isinstance(media_obj, list):
-                        for item in media_obj:
-                            media_id = item.get("id")
-                            if media_id:
-                                handle_meta_media_upload(broker, property_obj, media_id, phone)
-                    else:
-                        media_id = media_obj.get("id")
-                        if media_id:
-                            handle_meta_media_upload(broker, property_obj, media_id, phone)
+                    # WhatsApp always sends single media per webhook
+                    if isinstance(media_obj, dict) and "id" in media_obj:
+                        add_media_to_queue(broker.id, media_obj["id"])
 
-                return HttpResponse("Media processed", status=200)
+                # debounce uploads: wait 3 seconds before processing batch
+                if broker.id in upload_timers:
+                    upload_timers[broker.id].cancel()
+
+                upload_timers[broker.id] = Timer(3.0, schedule_media_upload, args=(broker, property_obj, phone))
+                upload_timers[broker.id].start()
+
+                return HttpResponse("Media queued", status=200)
         elif mode == "edit_broker":
             resp = handle_edit_broker_session(broker, msg, session)
             for txt in resp.get("texts", []):
