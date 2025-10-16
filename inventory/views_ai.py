@@ -5,9 +5,9 @@ from urllib.parse import parse_qs
 from .views_twilio import EDIT_FIELDS_MAP
 
 from .models import Broker, Property
-from inventory.services.redis_setup import get_session, set_session, clear_session
+from inventory.services.redis_setup import get_session, set_session, clear_session, is_media_processed, mark_media_processed
 from inventory.services.ai_intent import classify_intent
-from .models import Broker, Property
+from .models import Broker, Property, MediaAsset
 from .views_twilio import (
     handle_onboarding, handle_list, handle_view, handle_share,
     handle_edit, handle_delete, handle_activate, handle_disable, handle_share_all_to_client,
@@ -189,6 +189,59 @@ def is_duplicate_message(msg_id: str) -> bool:
     set_session(key, True, ttl=3600)
     return False
 
+
+
+
+import requests, cloudinary.uploader,os
+
+META_TOKEN = os.getenv("META_TOKEN")
+
+def handle_meta_media_upload(broker, property_obj, media_id, from_number):
+    try:
+        if is_media_processed(media_id):
+            return None
+        
+        url = f"https://graph.facebook.com/v22.0/{media_id}"
+        headers = {"Authorization": f"Bearer {META_TOKEN}"}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        direct_url = response.json().get("url")
+
+        media_response = requests.get(direct_url, headers=headers, stream=True, timeout=20)
+        media_response.raise_for_status()
+
+        upload_result = cloudinary.uploader.upload(
+            media_response.raw,
+            resource_type = "auto",
+            folder="property_media"
+        ) 
+
+        file_url = upload_result["secure_url"]
+        file_type = upload_result["resource_type"]
+
+        MediaAsset.objects.create(
+            property=property_obj,
+            media_type=file_type,
+            storage_url=file_url
+        )
+
+        mark_media_processed(media_id)
+        send_whatsapp_text(from_number, "✅ Media uploaded successfully!")
+        return file_url
+    
+    except Exception as e:
+        print(f"[ERROR] Failed to upload media {media_id}: {e}")
+        send_whatsapp_text(from_number, "⚠️ Media upload failed, please try again.")
+        return None
+
+
+
+
+
+
+
+
+
 import logging
 @csrf_exempt
 def whatsapp_webhook_meta(request):
@@ -304,15 +357,43 @@ def whatsapp_webhook_meta(request):
                     send_whatsapp_text(phone, txt)
                 return HttpResponse("Done handled", status=200)
 
-            num_media = len(msg_obj.get("image", [])) + len(msg_obj.get("video", []))
-            if num_media > 0:
-                resp = handle_media(broker, msg_obj)
-                for txt in resp.get("texts", []):
-                    send_whatsapp_text(phone, txt)
-                for media in resp.get("medias", []):
-                    send_whatsapp_media(phone, media["url"], media["type"])
-                return HttpResponse("Media handled", status=200)
-             
+            # num_media = len(msg_obj.get("image", [])) + len(msg_obj.get("video", []))
+            # if num_media > 0:
+            #     resp = handle_media(broker, msg_obj)
+            #     for txt in resp.get("texts", []):
+            #         send_whatsapp_text(phone, txt)
+            #     for media in resp.get("medias", []):
+            #         send_whatsapp_media(phone, media["url"], media["type"])
+            #     return HttpResponse("Media handled", status=200)
+            if "image" in msg_obj or "video" in msg_obj:
+                try:
+                    property_id = session.get("property_id")
+                    property_obj = Property.objects.get(broker=broker, property_id=property_id)
+                except Property.DoesNotExist:
+                    clear_session(broker.id)
+                    send_whatsapp_text(phone, "⚠️ Property not found. Please start again.")
+                    return HttpResponse("Property not found", status=200)
+
+                send_whatsapp_text(phone, "📸 Got your media! Uploading...")
+
+                # Handle one or more media objects
+                for m_type in ["image", "video"]:
+                    media_obj = msg_obj.get(m_type)
+                    if not media_obj:
+                        continue
+
+                    # If multiple items are sent in a single message
+                    if isinstance(media_obj, list):
+                        for item in media_obj:
+                            media_id = item.get("id")
+                            if media_id:
+                                handle_meta_media_upload(broker, property_obj, media_id, phone)
+                    else:
+                        media_id = media_obj.get("id")
+                        if media_id:
+                            handle_meta_media_upload(broker, property_obj, media_id, phone)
+
+                return HttpResponse("Media processed", status=200)
         elif mode == "edit_broker":
             resp = handle_edit_broker_session(broker, msg, session)
             for txt in resp.get("texts", []):

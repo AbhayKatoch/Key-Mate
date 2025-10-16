@@ -16,3 +16,11 @@ def get_session(broker_id):
 
 def clear_session(broker_id):
     redis_client.delete(f"session:{broker_id}")
+
+def mark_media_processed(media_id, ttl=86400):
+    key = f"media_processed:{media_id}"
+    redis_client.setex(key, ttl, "true")
+
+def is_media_processed(media_id):
+    key = f"media_processed:{media_id}"
+    return redis_client.exists(key)
