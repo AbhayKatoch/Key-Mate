@@ -261,11 +261,11 @@ def schedule_media_upload(broker, property_obj, phone):
         "When you're done, type *done* or *skip* to finish adding this property."
     )
     upload_timers.pop(broker_id, None)
-    Timer(25.0, lambda: send_whatsapp_text(
-        phone,
-        "💡 Looks like you’re done sending images!\n"
-        "Type *done* to finalize this property, or *skip* to cancel."
-    )).start()
+    # Timer(10.0, lambda: send_whatsapp_text(
+    #     phone,
+    #     "💡 Looks like you’re done sending images!\n"
+    #     "Type *done* to finalize this property, or *skip* to cancel."
+    # )).start()
 
 
 

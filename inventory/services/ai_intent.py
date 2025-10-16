@@ -68,8 +68,23 @@ prompt = PromptTemplate(
 chain = prompt | model | parser
 
 def classify_intent(user_msg : str) -> UserIntent:
-    result = chain.invoke({"user_msg": user_msg})
-    return result
+    if not user_msg or not user_msg.strip():
+        return UserIntent(action="ignore")
+
+    lowered = user_msg.strip().lower()
+    media_keywords = ["image", "photo", "video", "media", "upload", "pic", "picture", "jpg", "jpeg", "png"]
+    if any(word in lowered for word in media_keywords) and len(lowered.split()) <= 3:
+        # likely a non-text media trigger
+        return UserIntent(action="ignore")
+
+    # 🧠 2. Otherwise classify using the LLM
+    try:
+        result = chain.invoke({"user_msg": user_msg})
+        return result
+    except Exception as e:
+        # Fallback on failure
+        print(f"[INTENT ERROR] {e}")
+        return UserIntent(action="help")
 
 
 ##for customer
